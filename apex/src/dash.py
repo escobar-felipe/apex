@@ -18,7 +18,7 @@ dash_app = DashProxy(__name__,
     meta_tags=[
         {"name": "viewport", "content": "width=device-width, initial-scale=1"}
     ],
-    url_base_pathname='/',
+    url_base_pathname='/apex',
     external_stylesheets=[BOOTSTRAP],
     external_scripts = [{'src': 'https://unpkg.com/imask@6.4.3/dist/imask.js'},
                         {'src': 'https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.10.8/dayjs.min.js'},
