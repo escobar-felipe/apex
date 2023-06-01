@@ -54,7 +54,7 @@ class SendEmail:
                             <table role="presentation" style="width:100%;border-collapse:collapse;border:0;border-spacing:0;">
                             <tr>
                                 <td align="center" style="padding:40px 0 0 0;background:#ffffff;">
-                                <img src="https://i.ibb.co/K0HY6Z1/thambnail.jpg" alt="" width="300" style="height:auto;display:block;" />
+                                <img src="https://i.ibb.co/K0HY6Z1/thambnail.jpg" alt="" width="100%" style="height:auto;display:block;" />
                                 </td>
                             </tr>
                             <tr>
