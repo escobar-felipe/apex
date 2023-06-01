@@ -1,0 +1,246 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald&display=swap');
+/* body {
+    font-family: 'Oswald';
+} */ */
+
+._dash-loading{
+    color: rgba(255, 0, 0, 0);
+}
+
+
+.form-check-input[type=radio] {
+    height: 25px;
+    width: 25px;
+    border-radius: 20%;
+}
+
+
+input:invalid{
+    outline: 0.1px solid red
+}
+.form-check-input:checked[type="radio"] {
+    height: 25px;
+    width: 25px;
+	background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e");
+}
+
+.page-item .page-link {
+    border-radius: 100%!important;
+    height: 40px!important;
+    width: 40px!important;
+    font-family: 'Oswald';
+    text-align: center;
+}
+
+.form-control-date {
+    display: block!important;
+    width: 100%!important;
+}
+
+.form-control-lg {
+    min-height: calc(1.5em + 1rem + 2px);
+    padding: .5rem 1rem;
+    font-size: 1.25rem;
+    border-radius: .3rem;
+}
+
+.page-item .page-weekdays{
+    height: 40px!important;
+    width: 40px!important;
+    text-align: center;
+    display: inline-block;
+    margin-bottom:0px!important;
+}
+
+.mb-7{
+    margin-bottom: 70px!important;
+}
+
+.imagedescription {
+    height: 100px!important; /* altura desejada */
+    overflow: hidden!important; /* recorta a imagem */
+  }
+
+.color-blue{
+    color: #0f57bf!important;
+}
+
+.card-event{
+    border-radius: 8px;
+    border: solid;
+    border-top-color: #1f1f1f;
+    border-bottom-color: #1f1f1f;
+    border-right-color: #1f1f1f;
+    border-width: 0.05em 0.05em 0.05em 0.8em;
+}
+
+
+.bg-blue{
+    background-color: #0f57bf!important;
+}
+
+
+
+.page-item.active .page-link {
+    z-index: 3!important;
+    color: #fff!important;
+    background-color: #0f57bf!important;
+    border-color: #0f57bf!important;
+  }
+/* //This changes the width for all the offcanvas in the app */
+.offcanvas{
+     width:60% !important;
+}  
+
+nav {
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,.2);
+  }
+
+.circle {
+width: 33px;
+height: 33px;
+border-radius: 50%;
+background-color: #c4c4c4;
+color: #1f1f1f;
+display: flex;
+justify-content: center;
+align-items: center;
+font-size: 15px;
+margin: 0 auto;
+}
+  
+a:link { text-decoration: none; 
+        color: rgb(17, 17, 17);}
+a:visited { text-decoration: none; 
+    color: rgb(17, 17, 17);}
+a:hover { text-decoration: none; 
+    color: rgb(17, 17, 17);}
+a:active { text-decoration: none; 
+    color: rgb(17, 17, 17);}
+
+.descripton {
+    text-decoration: none;
+    color: white;
+    font-size: x-large;
+}
+
+.nav-link.active-vamo{
+    color: white;
+    background-color: #0f57bf;
+}
+
+a.descripton:hover{
+    color: white;
+}
+
+.fa-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+.card-link {
+    display: inline-block;
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 0.35rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    text-decoration: none!important;
+    color: inherit;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    text-align: center;
+    line-height: 1.5;
+  }
+  
+  .card-link:hover {
+    text-decoration: none;
+    background-color: #fafafa;
+  }
+  
+
+/* // If you are using multiple offcanvas in your app, add this */
+.fadeInDown {
+    -webkit-animation-name: fadeInDown;
+    animation-name: fadeInDown;
+    -webkit-animation-duration: 1s;
+    animation-duration: 1s;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    }
+    @-webkit-keyframes fadeInDown {
+    0% {
+    opacity: 0;
+    -webkit-transform: translate3d(0, -30%, 0);
+    transform: translate3d(0, -30%, 0);
+    }
+    100% {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+    }
+    }
+    @keyframes fadeInDown {
+    0% {
+    opacity: 0;
+    -webkit-transform: translate3d(0, -30%, 0);
+    transform: translate3d(0, -30%, 0);
+    }
+    100% {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+    }
+    }
+    
+.fadeInRight {
+    -webkit-animation-name: fadeInRight;
+    animation-name: fadeInRight;
+    -webkit-animation-duration: 1s;
+    animation-duration: 1s;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
+    }
+    @-webkit-keyframes fadeInRight {
+    0% {
+    opacity: 0;
+    -webkit-transform: translate3d(30%, 0, 0);
+    transform: translate3d(30%, 0, 0);
+    }
+    100% {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+    }
+    }
+    @keyframes fadeInRight {
+    0% {
+    opacity: 0;
+    -webkit-transform: translate3d(30%, 0, 0);
+    transform: translate3d(30%, 0, 0);
+    }
+    100% {
+    opacity: 1;
+    -webkit-transform: none;
+    transform: none;
+    }
+    } 
+
+.select-navbar{
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' style='stroke:white' stroke-width='3' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    border: none!important;
+    color: white;
+    background-color: #0f57bf;
+    font-size: 18px;
+    font-weight: bold;
+    background-size: 20px 16px;
+    padding-left: 3px!important;
+}
+
+
+.bg-fixed {
+    /* The image used */
+    background:url(img/bg-img-start.jpg)!important;
+    background-repeat: repeat!important;;
+    background-size: cover!important;;
+    background-attachment: fixed!important;;
+  }
