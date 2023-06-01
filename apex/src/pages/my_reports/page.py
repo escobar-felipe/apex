@@ -44,7 +44,7 @@ def layout(**query_strings):
                 modal = html.Div(
                     [
                         dmc.Modal(
-                            title="Sucesso, o email foi enviado!",
+                            title="Menssagem!",
                             id={'type': 'modal-send-email','index': result_id.result_id},
                             centered=True,
                             zIndex=10000,

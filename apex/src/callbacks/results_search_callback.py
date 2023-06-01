@@ -51,7 +51,7 @@ def update_status(_):
                     modal = html.Div(
                     [
                         dmc.Modal(
-                            title="Sucesso, o email foi enviado!",
+                            title="Menssagem!",
                             id={'type': 'modal-send-email','index': result_id.result_id},
                             centered=True,
                             zIndex=10000,
@@ -107,10 +107,12 @@ def update_status(_):
 )
 def display_output(n_clicks, value):
     if value:
-        if not current_user.email or current_user.smtp_password:
+        print()
+        if not current_user.email or not current_user.stmp_password:
             return True,[dmc.Center([DashIconify(id ='icon-modal',icon="ep:failed",color='red', width=100),
                                     dmc.Title(f"Email ou Senha SMTP não cadastradas", order=3)])] ,no_update
         if "@" in value:
-            SendEmail(smtp_login=current_user.email, smtp_password= current_user.smtp_password,).send_email_to(response=AsyncResult(ctx.triggered_id.get("index", None)).get(), email=value)
-        return True,no_update, no_update
-    return False,no_update,no_update
+            SendEmail(smtp_login=current_user.email, smtp_password= current_user.stmp_password,).send_email_to(response=AsyncResult(ctx.triggered_id.get("index", None)).get(), email=value)
+            return True,[dmc.Center([DashIconify(id ='icon-modal',icon="line-md:circle-twotone-to-confirm-circle-twotone-transition",color='green', width=100)])],no_update
+    return True,[dmc.Center([DashIconify(id ='icon-modal',icon="ep:failed",color='red', width=60),
+                                    dmc.Title(f"Inválido, Email incompleto!", order=3)])] ,no_update

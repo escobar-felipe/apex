@@ -31,7 +31,7 @@ def layout(**query_strings):
                     type="text",
                     id="stmp_password",
                     placeholder="Sua senha STMP",
-                    value=current_user.api_key
+                    value=current_user.stmp_password
                 ), 
                 dbc.FormText(
                     "Entre com sua senha STMP.", color="secondary"

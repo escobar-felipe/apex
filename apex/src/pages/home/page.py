@@ -32,6 +32,7 @@ def layout(**query_strings):
         report_tab =[
             dmc.LoadingOverlay(dbc.Col([
             html.Div([],id='alert-div'),
+            dmc.Alert("Selecione pelo menos um texto para gerar o relatório!", title="Mensagem!", color="red", hide=True, duration=5000, id="alert-multi-select",className="mt-3"),
             dmc.Title(f"Relatório GPT", order=1, className="mt-4"),
             dmc.Timeline(
                 active=3,
@@ -83,6 +84,7 @@ def layout(**query_strings):
                         nothingFound="Nenhuma opção encontrada",
                         style={"width": "400"},
                         id ="multiselect-text",
+                        required=True
                     ),
                 dbc.FormText(
                     "Selecione os textos para serem analisados", color="secondary"

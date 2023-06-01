@@ -52,19 +52,19 @@ def navbar(icon = None , search_active= None,profile_active = None, my_search_ac
             label=[dmc.Text([get_icon(icon="bi:house-door-fill"),"Área de Pesquisa"])],
             className="text-center border",
             active=search_active,
-            href="/"
+            href="/apex/"
         ),        
         dmc.NavLink(
             label=[dmc.Text([get_icon(icon="material-symbols:image-search"),"Meus Relatórios"])],
             className="text-center border",
             active=my_search_active,
-            href="/my_reports"
+            href="/apex/my_reports"
         ),
         dmc.NavLink(
             label=[dmc.Text([get_icon(icon="mdi:user"),"Minha Conta"])],
             className="text-center border",
             active=profile_active,
-            href="/profile"
+            href="/apex/profile"
         ),
 
         

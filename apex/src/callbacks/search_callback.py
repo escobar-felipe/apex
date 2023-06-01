@@ -82,8 +82,7 @@ def search_callback(n_clicks, search_query):
 
         qtd_textos  = str(len(articles)) + " Textos"
         items = []
-        if len(articles) < 4:
-            items.append(dmc.ListItem("Mínimo 4 sites para gerar um relatório!")) 
+        
         if not current_user.api_key:
             items.append(dmc.ListItem("Necessário cadastrar uma chave Openai API")) 
 
