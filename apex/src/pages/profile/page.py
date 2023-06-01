@@ -76,4 +76,4 @@ def layout(**query_strings):
         body = html.Div([navbar(icon=None, profile_active=True), content])
         return body
     else:
-        return dcc.Location(pathname="/login", id="someid_login")
+        return dcc.Location(pathname="/apex/login", id="someid_login")

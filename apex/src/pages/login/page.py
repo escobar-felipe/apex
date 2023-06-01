@@ -8,7 +8,7 @@ register_page(__name__, path='/login', title="Login")
 
 def layout(**query_strings):
         if current_user.is_authenticated:
-                return dcc.Location(pathname="/", id="redirect-home-login")
+                return dcc.Location(pathname="/apex", id="redirect-home-login")
         modal = dmc.Modal(
             title="Falha ao realizar Login",
             id="modal-centered",
