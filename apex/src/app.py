@@ -13,11 +13,11 @@ def create_flask_app():
     settings = get_settings()
     server = Flask(__name__)
     server.config.update(SECRET_KEY=settings.secret_session)
-    server.config['SESSION_TYPE'] = "filesystem"  #redis
-    # server.config['SESSION_REDIS'] = redis.from_url(f'{settings.redis_db}/1')
-    # server.config['SESSION_PERMANENT'] = False
-    # server.config['SESSION_USE_SIGNER'] = True
-    # server.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
+    server.config['SESSION_TYPE'] = "redis"  #redis
+    server.config['SESSION_REDIS'] = redis.from_url(f'{settings.redis_db}/1')
+    server.config['SESSION_PERMANENT'] = False
+    server.config['SESSION_USE_SIGNER'] = True
+    server.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
     
     server.config['CACHE_TYPE'] = 'redis'
     server.config['CACHE_REDIS_URL'] = f'{settings.redis_db}/10'
