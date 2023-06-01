@@ -261,10 +261,9 @@ class MonitoringAndAnalysis:
                         result += f"""<p style="font-size:16;margin:0 0 20px 0;font-family:Arial,sans-serif;">Fonte: {j['source']} </p>"""
                         result += "<br>"
                 # Generate the GPT-based report
-                report = self.generate_report(most_common, spokesperson_counts, bias_counts)
+                report = self.generate_report(most_common, spokesperson_counts, bias_counts),
                 #passa os parâmetros para a função generate a report
-		        
-                result += f"""<p style="font-size:16;margin:0 0 20px 0;font-family:Arial,sans-serif;">{report}</p>"""
+                result += f"""<h3>Análise</h3><br><p style="font-size:16;margin:0 0 20px 0;font-family:Arial,sans-serif;">{report}</p>"""
                 return result 
             else:
                 if self.error:

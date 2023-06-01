@@ -10,7 +10,7 @@ def navbar(icon = None , search_active= None,profile_active = None, my_search_ac
     icon_bar = dbc.Row(
         [
             dbc.Col(
-                 html.A(DashIconify(icon="clarity:logout-line", width=30), className="link-light text-white" , href="/logout"),
+                 html.A(DashIconify(icon="clarity:logout-line", width=30), className="link-light text-white" , href="/apex/logout"),
                 width="auto",
             ),
         ],

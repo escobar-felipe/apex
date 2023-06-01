@@ -20,7 +20,7 @@ def layout(**query_strings):
                     type="text",
                     id="email_user",
                     placeholder="Seu email",
-                    value=current_user.api_key
+                    value=current_user.email
                 ),
                 dbc.FormText(
                     "Entre com email (Gmail).", color="secondary"

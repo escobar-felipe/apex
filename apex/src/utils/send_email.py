@@ -54,7 +54,7 @@ class SendEmail:
                             <table role="presentation" style="width:100%;border-collapse:collapse;border:0;border-spacing:0;">
                             <tr>
                                 <td align="center" style="padding:40px 0 0 0;background:#ffffff;">
-                                <img src="https://i.ibb.co/K0HY6Z1/thambnail.jpg" alt="" width="100%" style="height:auto;display:block;" />
+                                <img src="https://i.ibb.co/DCXMwvw/thambnail.jpg" alt="" width="100%" style="height:auto;display:block;" />
                                 </td>
                             </tr>
                             <tr>
@@ -70,7 +70,7 @@ class SendEmail:
                         </td>
                         </tr>
                         <tr>
-                        <td style="padding:30px;background:#d41e1d;">
+                        <td style="padding:30px;background:#504cab;">
                             <table role="presentation" style="width:100%;border-collapse:collapse;border:0;border-spacing:0;font-size:9px;font-family:Arial,sans-serif;">
                             <tr>
                                 <td style="padding:0;width:50%;" align="left">
@@ -82,10 +82,10 @@ class SendEmail:
                                 <table role="presentation" style="border-collapse:collapse;border:0;border-spacing:0;">
                                     <tr>
                                     <td style="padding:0 0 0 10px;width:38px;">
-                                        <a href="https://www.linkedin.com/company/apex-conte%C3%BAdo-estrat%C3%A9gico/" style="color:#d41e1d;"><img src="https://i.ibb.co/FYgRQLF/linkedin-icon.png" alt="Linkedin" width="38" style="height:auto;display:block;border:0;" /></a>
+                                        <a href="https://www.linkedin.com/company/apex-conte%C3%BAdo-estrat%C3%A9gico/" style="color:#504cab;"><img src="https://i.ibb.co/FYgRQLF/linkedin-icon.png" alt="Linkedin" width="38" style="height:auto;display:block;border:0;" /></a>
                                     </td>
                                     <td style="padding:0 0 0 10px;width:38px;">
-                                        <a href="https://www.instagram.com/apexagencia/" style="color:#d41e1d;"><img src="https://i.ibb.co/PWQbddz/instagram-icon.png" alt="Instagram" width="38" style="height:auto;display:block;border:0;" /></a>
+                                        <a href="https://www.instagram.com/apexagencia/" style="color:#504cab;"><img src="https://i.ibb.co/PWQbddz/instagram-icon.png" alt="Instagram" width="38" style="height:auto;display:block;border:0;" /></a>
                                     </td>
                                     </tr>
                                 </table>
