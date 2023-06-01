@@ -19,7 +19,7 @@ class SendEmail:
             
             
             msg = MIMEMultipart()
-            msg['Subject'] = '[APEX] Resultado do relatório GPT'
+            msg['Subject'] = '[APEX REPORT] Resultado do relatório.'
             msg['From'] = self.smtp_login
             msg['To'] = email
 
