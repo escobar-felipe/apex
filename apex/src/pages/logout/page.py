@@ -9,4 +9,4 @@ register_page(__name__, path='/logout')
 def layout(**query_strings):
     if current_user.is_authenticated:
         logout_user()
-    return dcc.Location(pathname="/apex/login", id="redirect-logout")
+    return dcc.Location(pathname="/login", id="redirect-logout")

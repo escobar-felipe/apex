@@ -22,6 +22,6 @@ def login(n_clicks, username, password):
             return no_update, no_update, True
 
         login_user(user)
-        return dcc.Location(pathname="/apex/", id="someid_doesnt_matter"), no_update, False
+        return dcc.Location(pathname="/", id="someid_doesnt_matter"), no_update, False
     else:
         return no_update, no_update, True

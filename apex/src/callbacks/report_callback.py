@@ -28,5 +28,5 @@ def report_gpt_callback(n_clicks, search_value,data_select):
         search_result = SearchResult(title=search_value, user_id = current_user.id,result_id=task_id)
         db.session.add(search_result)
         db.session.commit()
-    return dcc.Location(pathname="/apex/my_reports", id="redirec_my_reports"), no_update
+    return dcc.Location(pathname="/my_reports", id="redirec_my_reports"), no_update
 

@@ -114,4 +114,4 @@ def layout(**query_strings):
         body = html.Div([navbar(icon=None, my_search_active=True), content])
         return body
     else:
-        return dcc.Location(pathname="/apex/login", id="redirect_login_page")
+        return dcc.Location(pathname="/login", id="redirect_login_page")

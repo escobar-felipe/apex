@@ -10,7 +10,7 @@ from flask_login import current_user
 # Proteger o admin com login via Monkey Patch
 AdminIndexView._handle_view = login_required(AdminIndexView._handle_view)
 sqla.ModelView._handle_view = login_required(sqla.ModelView._handle_view)
-admin = Admin(url="/apex/admin")
+admin = Admin(url="/admin")
 
 
 class AdminView(AdminIndexView):
