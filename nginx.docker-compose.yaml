@@ -1,0 +1,47 @@
+version: '3'
+services:
+  nginx:
+      container_name: nginx
+      image: nginx:latest
+      ports:
+        - "80:80"
+        - "443:443"
+      networks:
+        - net-host
+      volumes:
+        - type: bind
+          source: /home/ubuntu/volumes/web/config/nginx.conf
+          target: /etc/nginx/nginx.conf
+
+        - type: volume
+          source: storege_certbot_datacerts
+          target: /data/datacerts
+          volume:
+            nocopy: true
+
+        - type: volume
+          source: storege_certbot_letsencrypt
+          target: /etc/letsencrypt
+          volume:
+            nocopy: true
+
+        - storage_nginx_www:/usr/share/nginx/html
+
+networks:
+  net-host:
+    external: true
+
+volumes:
+  storege_certbot_datacerts:
+    external: true
+
+  storege_certbot_letsencrypt:
+    external: true
+
+  storage_nginx_www:
+    driver: local
+    name: storage_nginx_www
+    driver_opts:
+      type: none
+      device: /home/ubuntu/volumes/www/public_static
+      o: bind

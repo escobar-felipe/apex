@@ -9,7 +9,7 @@ assets_path = os.getcwd() +'/assets'
 
 dash_app = DashProxy(__name__,
     use_pages=True,
-    title='Cfit',
+    title='Apex',
     suppress_callback_exceptions=True,
     transforms=[MultiplexerTransform()], 
     serve_locally=True,

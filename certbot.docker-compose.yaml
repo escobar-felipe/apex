@@ -1,0 +1,43 @@
+version: '3.7'
+
+services:
+    certbot:
+        image: felipeescobar/certbot:lastest
+        container_name: certbot
+        networks:
+          - net-host
+        stdin_open: true
+        volumes:
+          - type: volume
+            source: storege_certbot_datacerts
+            target: /data/datacerts
+            volume:
+              nocopy: true
+
+          - type: volume
+            source: storege_certbot_letsencrypt
+            target: /etc/letsencrypt
+            volume:
+              nocopy: true
+        entrypoint:  ['/bin/bash']
+
+volumes:
+  storege_certbot_datacerts:
+    driver: local
+    name: storege_certbot_datacerts
+    driver_opts:
+      type: none
+      device: /home/ubuntu/volumes/certbot/datacerts
+      o: bind
+
+  storege_certbot_letsencrypt:
+    driver: local
+    name: storege_certbot_letsencrypt
+    driver_opts:
+      type: none
+      device: /home/ubuntu/volumes/certbot/letsencrypt
+      o: bind
+
+networks:
+  net-host:
+    external: true
