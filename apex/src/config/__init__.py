@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     folder_assets: str = f'{getcwd()}/assets'
     limit: int = int(getenv('LIMIT', 1500))
     base_url = os.getenv('BASE_URL', '/')
-    redis_db = os.getenv('REDIS_HOST', 'redis://localhost:6379')
+    redis_db = os.getenv('REDIS_HOST', 'redis://redis:6379')
 
     secret_session = 'd5c80696-9675-4047-98a6-acac6dfb247e'
     theme_default = 'BOOTSTRAP'
