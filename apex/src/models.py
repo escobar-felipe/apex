@@ -9,6 +9,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(512))
     api_key = db.Column(db.String(512), default=None)
+    serpapi_key = db.Column(db.String(512), default=None)
     email = db.Column(db.String(512), default=None)
     stmp_password = db.Column(db.String(512), default=None)
     admin = db.Column(db.Boolean, default=False)

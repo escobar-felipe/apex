@@ -47,6 +47,17 @@ def layout(**query_strings):
                 dbc.FormText(
                     "Entre com sua chave da API OpenAI.", color="secondary"
                 ),
+                dmc.Space(h=20),
+                dbc.Label("Chave SerpAPI", html_for="serp-api-key"),
+                dbc.Input(
+                    type="text",
+                    id="serp-api-key",
+                    placeholder="Sua chave SerpAPI",
+                    value=current_user.serpapi_key
+                ),
+                dbc.FormText(
+                    "Entre com sua chave SerpAPI.", color="secondary"
+                ),
             ],
             className="mb-3",
         )

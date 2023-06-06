@@ -15,14 +15,12 @@ output = [
 
 @callback(output,
           [Input('btn-update-user', 'n_clicks')],
-          [State('open-api-key', 'value'),State('email_user', 'value'),State('stmp_password', 'value')], prevent_initial_call=True)
-def profile_callback(n_clicks, open_key,email , stmp_password):
+          [State('open-api-key', 'value'),State('email_user', 'value'),State('stmp_password', 'value'),State('serp-api-key', 'value')], prevent_initial_call=True)
+def profile_callback(n_clicks, open_key,email , stmp_password, serpapi_key):
     time.sleep(1)
-    if not open_key and not email and not stmp_password:
-        return no_update, "Erro!",True, dmc.Text("Preencha os campos para atualizar seus dados")
     button_id = ctx.triggered_id if not None else 'No clicks yet'
     if button_id == 'btn-update-user':
-        db.session.query(User).filter(User.username==current_user.username).update({'api_key':open_key, 'email':email, 'stmp_password':stmp_password})
+        db.session.query(User).filter(User.username==current_user.username).update({'api_key':open_key, 'email':email, 'stmp_password':stmp_password, 'serpapi_key':serpapi_key})
         db.session.commit()
         return no_update, "Sucesso!", True,  dmc.Text("Seus dados foram atualizados!")
     else:

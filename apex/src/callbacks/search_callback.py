@@ -1,4 +1,4 @@
-from dash_extensions.enrich import Output, Input, State, callback, no_update
+from dash_extensions.enrich import Output, Input, State, callback, no_update, ctx
 from src.utils.functions import google_search, Card, create_cards
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
@@ -25,11 +25,12 @@ output = [
           [Input('button-search', 'n_clicks')],
           [State('search-state', 'value')], prevent_initial_call=True)
 def search_callback(n_clicks, search_query):
+    print(ctx)
     disabled = False
     if search_query:
         search_google = google_search(search_query)
-        search_twitter = google_search(query=str(search_query), as_sitesearch="twitter.com")
-        search_facebook = google_search(query=str(search_query), as_sitesearch="facebook.com")
+        search_twitter = []#google_search(query=str(search_query), as_sitesearch="twitter.com")
+        search_facebook = []#google_search(query=str(search_query), as_sitesearch="facebook.com")
 
         badge_google = dmc.Badge(
                             len(search_google),
