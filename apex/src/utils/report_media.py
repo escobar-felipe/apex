@@ -79,38 +79,31 @@ class MonitoringAndAnalysis:
         #retorna uma string: título + " " + texto
 
     def analyze_articles(self,df:pd.DataFrame):
-        with ThreadPoolExecutor() as executor:
-            #ThreadPoolExecutor() é uma classe que gerencia o pool de threads para realizar a execução simultânea ou paralela de tarefas em um ambiente multithread
-            #Com a classe instânciada você pode enviar várias tarefas simultaneamente e ela serão executadas em paralelo pelos threads com o número máximo de trabalhadores especificados
-            #wokers - padrão
-            futures = []
             #cria uma lista vazia futures
-            for i, row in df.iterrows():
-                #method iterrows para percorrer as linhas do dataframe
-                time.sleep(2)
-                #timer para ajustar as requisições
-                article_text = row["text"]
-                #extrai o texto de acordo com a coluna texto
-                article_text = self.truncate_text(article_text, 1800)
-                print(article_text)
-                #limita 2000 o texto a partir da função truncate_text baseado no tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-                prompt = (
-                f"Por favor, analise este artigo de notícias e forneça um resumo abrangente com base nas seguintes categorias. Por favor, responda a todas as partes do seguinte:\n\n"
-                f"Temas principais: Identifique os tópicos centrais discutidos no artigo.\n"
-                f"Resumo: Crie um breve resumo desse artigo\n"
-                f"Narrativas: Descreva quaisquer histórias ou mensagens abrangentes presentes no artigo.\n"
-                f"Opiniões: Mencione os principais pontos de vista ou perspectivas expressos no artigo, juntamente com suas fontes (se mencionadas).\n"
-                f"Porta-vozes: Liste quaisquer indivíduos ou organizações mencionados como fontes, juntamente com seus papéis ou afiliações.\n"
-                f"Viés: Aponte quaisquer possíveis preconceitos no artigo, seja por meio de linguagem, perspectiva ou foco.\n"
-                f"Emoção do artigo: Determine a(s) emoção(ões) dominante(s) transmitida(s) pelo artigo (por exemplo, positiva, negativa, neutra, etc.).\n\n"
-                f"Por favor, forneça sua análise em um formato bem estruturado e conciso. Use marcadores ou listas numeradas para tornar sua resposta mais fácil de ler e entender.\n\n"
-                f"Este é o artigo de notícias a ser avaliado. Forneça apenas os dados solicitados e nada mais antes de Temas principais: \n\n {article_text}"
-                )
-                #cria a variável string(prompt) no qual recebe o texto que contém as instruções para a análise a ser executada pelo modelo GPT-3 
-                # juntamente com o texto do artigo (limitado)
-
-                future = executor.submit(
-                    openai.Completion.create,
+        for i, row in df.iterrows():
+            #method iterrows para percorrer as linhas do dataframe
+            time.sleep(2)
+            #timer para ajustar as requisições
+            article_text = row["text"]
+            #extrai o texto de acordo com a coluna texto
+            article_text = self.truncate_text(article_text, 1800)
+            #limita 2000 o texto a partir da função truncate_text baseado no tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+            prompt = (
+            f"Por favor, analise este artigo de notícias e forneça um resumo abrangente com base nas seguintes categorias. Por favor, responda a todas as partes do seguinte:\n\n"
+            f"Temas principais: Identifique os tópicos centrais discutidos no artigo.\n"
+            f"Resumo: Crie um breve resumo desse artigo\n"
+            f"Narrativas: Descreva quaisquer histórias ou mensagens abrangentes presentes no artigo.\n"
+            f"Opiniões: Mencione os principais pontos de vista ou perspectivas expressos no artigo, juntamente com suas fontes (se mencionadas).\n"
+            f"Porta-vozes: Liste quaisquer indivíduos ou organizações mencionados como fontes, juntamente com seus papéis ou afiliações.\n"
+            f"Viés: Aponte quaisquer possíveis preconceitos no artigo, seja por meio de linguagem, perspectiva ou foco.\n"
+            f"Emoção do artigo: Determine a(s) emoção(ões) dominante(s) transmitida(s) pelo artigo (por exemplo, positiva, negativa, neutra, etc.).\n\n"
+            f"Por favor, forneça sua análise em um formato bem estruturado e conciso. Use marcadores ou listas numeradas para tornar sua resposta mais fácil de ler e entender.\n\n"
+            f"Este é o artigo de notícias a ser avaliado. Forneça apenas os dados solicitados e nada mais antes de Temas principais: \n\n {article_text}"
+            )
+            #cria a variável string(prompt) no qual recebe o texto que contém as instruções para a análise a ser executada pelo modelo GPT-3 
+            # juntamente com o texto do artigo (limitado)
+            try:
+                response = openai.Completion.create(
                     model="text-davinci-003",
                     prompt=prompt,
                     max_tokens=1800,
@@ -118,84 +111,28 @@ class MonitoringAndAnalysis:
                     stop=None,
                     temperature=0.7,
                 )
-                #envia a tarega para o pool de threads usando o método submit()
-                #passando a função openai.Completion.create
-                #com os parâmetros necessários, como nome do modelo GPT-3, prompt, número máximo de tokens, número de conclusões (definido como 1),
-                #sequência de parada (definido como None) e temperatura para controlar a aleatoriedade do texto gerado.
-                futures.append((i, future))
-                #adiciona uma tupla a lista futures contendo (i:posição,future: objeto "future" que representa a tarefa executada dentro do pool threads )
 
-            for i, future in futures:
-                #itera sobre a lista futures para recuperar os dados do resultado das tarefas executadas dentro do pool
-                retries = 0 #variável auxiliar
-                max_retries = 1 #variável auxiliar
-                while retries < max_retries:
-                    #loop para caso de algum erro ou o resultado não é o esperado para tentar novamente
-                    try:
-                        response = future.result()
-                        """ exemple of response
-                        {
-                            "choices": [
-                                {
-                                "finish_reason": "stop",
-                                "index": 0,
-                                "logprobs": null,
-                                "text": "\n\nMain Themes:\n-Therapist compensation at behavioral health tech companies\n-Differences in salaries based on stage of startup and education level\n-Funding for the behavioral health tech industry\n-Recent layoffs at digital behavioral health companies\n\nNarratives:\n-Therapists working at behavioral health tech companies have a wide range of salaries, with an average of $90,000.\n-Salaries vary depending on the stage of the startup and the therapist's education level.\n-The behavioral health tech industry has seen a significant funding boom, but layoffs have become more common. \n\nOpinions:\n-Jaclyn Satchel, executive director of Therapists in Tech: \"This report echoes many of the trends we saw in 2021. There is still a lot of variability in what people get paid. There is still a lack of representation of people of color in leadership positions. For all of the increased company valuations over the pandemic, salaries are still about the same.\"\n\nSpokespersons:\n-Jaclyn Satchel, executive director of Therapists in Tech \n-Therapists in Tech\n-Rock Health\n\nBiases:\n-The report does not provide information about the gender or race of therapists who are not psychologists.\n\nArticle Emotion: \nNeutral"
-                                }
-                            ],
-                            "created": 1681672429,
-                            "id": "cmpl-7626nyC5DYujuuEeyyVG9tqXP2qbw",
-                            "model": "text-davinci-003",
-                            "object": "text_completion",
-                            "usage": {
-                                "completion_tokens": 274,
-                                "prompt_tokens": 767,
-                                "total_tokens": 1041
-                            }
-                        }
-                        """
-                        output_text = response.choices[0].text.strip() #extrair do dicionário(response) o valor da chave choice(lista) na posição zero, extrair da chave text o valor e passar o método strip
-                        #strip remove os espaços do início e do fim do texto
-                        output_list = output_text.split("\n\n") #divide o texto das respostas em uma lista baseado no parâmetro "\n\n"
-                        #dividindo os tópicos em main_themes, narratives, opinions, spokespersons, biases e emotion
-                        parsed_data = {}
-                        #cria um dicionário vazio
-                        for item in output_list:
-                            #percorre a lista output_list 
-                            #para cada item:
-                            key, value = item.split(":", 1) #excecuta o mêtodo split no item com parâmetro ":" pegando a posição 1
-                            parsed_data[key.strip()] = value.strip()
-                            #armazenando a variável key and value no parserd_data(dict)
+                output_text = response.choices[0].text.strip()
+                output_list = output_text.split("\n\n")
+                parsed_data = {}
 
-                        # Check if all required keys are present in the parsed_data dictionary
-                        required_keys = ["Temas principais", "Resumo"]
-                        if all(key in parsed_data for key in required_keys):
-                            #verificando se no dicionário parsed_data contém os valores da lista required_keys
-                            #adiciona ao dataframe as seguintes colunas contendo os valores da variável parsed_data
-                            df.loc[i, "main_themes"] = parsed_data.get("Temas principais", "")
-                            df.loc[i, "resume"] = parsed_data.get("Resumo", "Nossa Inteligência Artificial não conseguiu gerar um resumo para esse artigo.")
-                            df.loc[i, "narratives"] = parsed_data.get("Narrativas", "")
-                            df.loc[i, "opinions"] = parsed_data.get("Opiniões", "")
-                            df.loc[i, "spokespersons"] = parsed_data.get("Porta-vozes", "")
-                            df.loc[i, "biases"] = parsed_data.get("Viés", "")
-                            df.loc[i, "emotion"] = parsed_data.get("Emoção do artigo", "")
-                            break
-                        else:
-                            #caso não encontre as chaves "required_keys" no dicionário parsed_date tente novamente
-                            retries += 1 #soma 1 na variável auxiliar
-                            print(f"Incomplete data for row {i}, retrying {retries}/{max_retries}...")
-                            future = executor.submit(
-                                openai.Completion.create,
-                                model="text-davinci-003",
-                                prompt=prompt,
-                                max_tokens=1800,
-                                n=1,
-                                stop=None,
-                                temperature=0.5,
-                            )
-                            #instância um novo obj na variável future com uma nova pesquisa na API
-                    except Exception as e:
-                        self.error= str(e)
+                for item in output_list:
+                    key, value = item.split(":", 1)
+                    parsed_data[key.strip()] = value.strip()
+
+                required_keys = ["Temas principais", "Resumo"]
+                if all(key in parsed_data for key in required_keys):
+                    df.loc[i, "main_themes"] = parsed_data.get("Temas principais", "")
+                    df.loc[i, "resume"] = parsed_data.get("Resumo", "Nossa Inteligência Artificial não conseguiu gerar um resumo para esse artigo.")
+                    df.loc[i, "narratives"] = parsed_data.get("Narrativas", "")
+                    df.loc[i, "opinions"] = parsed_data.get("Opiniões", "")
+                    df.loc[i, "spokespersons"] = parsed_data.get("Porta-vozes", "")
+                    df.loc[i, "biases"] = parsed_data.get("Viés", "")
+                    df.loc[i, "emotion"] = parsed_data.get("Emoção do artigo", "")
+                    
+        
+            except Exception as e:
+                self.error= str(e)
 
         return df
     
