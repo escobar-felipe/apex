@@ -128,12 +128,11 @@ class MonitoringAndAnalysis:
             for i, future in futures:
                 #itera sobre a lista futures para recuperar os dados do resultado das tarefas executadas dentro do pool
                 retries = 0 #variável auxiliar
-                max_retries = 3 #variável auxiliar
+                max_retries = 1 #variável auxiliar
                 while retries < max_retries:
                     #loop para caso de algum erro ou o resultado não é o esperado para tentar novamente
                     try:
                         response = future.result()
-                        print(response) #extraindo o resultado com o method result() do obj instânciado dentro da lista futures
                         """ exemple of response
                         {
                             "choices": [
