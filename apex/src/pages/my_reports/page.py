@@ -67,7 +67,7 @@ def layout(**query_strings):
                     task_status_singleton.set_status(result_id.result_id, "PENDING")
                     icon = "line-md:downloading-loop"
                     color = "blue"
-                    content = [dmc.Title(f"Processando seu relatório, dentro de instântes ele estára pronto.", order=3)]
+                    content = [dmc.Title(f"Processando seu relatório, dentro de instantes ele estará pronto.", order=3)]
                     peding = True
                 elif result.state == 'FAILURE':
                     task_status_singleton.set_status(result_id.result_id, "FAILURE")
