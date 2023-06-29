@@ -109,7 +109,7 @@ class MonitoringAndAnalysis:
                     max_tokens=1800,
                     n=1,
                     stop=None,
-                    temperature=0.7,
+                    temperature=0.5,
                 )
 
                 output_text = response.choices[0].text.strip()
