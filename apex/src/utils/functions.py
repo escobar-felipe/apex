@@ -60,62 +60,38 @@ def google_search(query:str, num_result=15,as_sitesearch=None):
     else:
         url = f"https://www.google.com/search?q={query}&hl=pt-BR&num={num_result}&as_qdr=d2"
 
-    response = requests.get(url, headers=headers)
-    if response.ok:
-        soup = BeautifulSoup(response.text, 'html.parser')
-        for i, result in enumerate(soup.find_all('div', class_='g')):
-            try:
-                title = result.find('h3').get_text()
-                link = result.find('a')['href'][:]
-                font = result.find_all('span', {'class':'VuuXrf'})[0].text
-            except:
-                title = ''
-                link = ''
-                font = ''
-            try:
-                span = result.find_all(name='div', class_='MUxGbd')[0].text
-            except:
-                span = ''
-            
-            if not span=='' or not link=='':
-                search_results.append({'title': title, 'link': link, 'description':span, 'source':font})
+    search_results = []
+    if current_user.serpapi_key:
+        params = {
+            "api_key": current_user.serpapi_key,
+            "engine": "google",
+            "q": query,
+            "hl": "pt",
+            "tbm": "nws",
+            "num": num_result,
+            "as_qdr":"d2"
+        }
+        #define os parâmetros de pesquisa na SERPAPI 
+        response = requests.get('https://serpapi.com/search.json', params=params)
+        #utilizando a lib requests para solicitar a requisição e receber a resposta(response)
+        data = json.loads(response.text)
+        #cria um json com a resposta
 
-        return [dict(t) for t in {tuple(d.items()) for d in search_results}]
-
-    else:
-        search_results = []
-        if current_user.serpapi_key:
-            params = {
-                "api_key": current_user.serpapi_key,
-                "engine": "google",
-                "q": query,
-                "hl": "pt",
-                "tbm": "nws",
-                "num": num_result,
-                "as_qdr":"d2"
-            }
-            #define os parâmetros de pesquisa na SERPAPI 
-            response = requests.get('https://serpapi.com/search.json', params=params)
-            #utilizando a lib requests para solicitar a requisição e receber a resposta(response)
-            data = json.loads(response.text)
-            #cria um json com a resposta
-
-            if 'news_results' in data:
-                #verifica se o json contém a chave 'new_results'
-                #cria uma lista vazia
-                for result in data['news_results']:
-                    print(result)
-                    #para cada resultado(lista) nos valores da chave 'new_results' 
-                    search_results.append({
-                        'title': result['title'],
-                        'link': result['link'],
-                        'description':f"{result['date']} - {result['snippet']}",
-                        'source': result['source']
-                    })
-        #             #adiciona um dicionário na lista articles com os seguintes valores: title, link, date e source
-        #     else:
-        #         return []
-        return search_results
+        if 'news_results' in data:
+            #verifica se o json contém a chave 'new_results'
+            #cria uma lista vazia
+            for result in data['news_results']:
+                #para cada resultado(lista) nos valores da chave 'new_results' 
+                search_results.append({
+                    'title': result['title'],
+                    'link': result['link'],
+                    'description':f"{result['date']} - {result['snippet']}",
+                    'source': result['source']
+                })
+    #             #adiciona um dicionário na lista articles com os seguintes valores: title, link, date e source
+    #     else:
+    #         return []
+    return search_results
 
     # return [dict(t) for t in {tuple(d.items()) for d in search_results}]
 
