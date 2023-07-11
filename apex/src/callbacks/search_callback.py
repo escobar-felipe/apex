@@ -29,7 +29,7 @@ def search_callback(n_clicks, search_query):
     disabled = False
     if search_query:
         search_google = google_search(search_query)
-        search_twitter = []#google_search(query=str(search_query), as_sitesearch="twitter.com")
+        search_twitter = google_search(query=str(search_query), as_sitesearch="twitter")
         search_facebook = []#google_search(query=str(search_query), as_sitesearch="facebook.com")
 
         badge_google = dmc.Badge(
@@ -67,12 +67,12 @@ def search_callback(n_clicks, search_query):
                 'description':i['description'],
                 'source': i['source']
             }
-            data.append({"value":dict_valeus, "label":i['title'][:40] })
+            data.append({"value":dict_valeus, "label":i['title'][:50] })
             articles.append(dict_valeus)
         for i in search_twitter:
             cards_twitter.append(create_cards(Card(i['title'],i['description'], i['source'], i['link'])))
         for i in search_facebook:
-            cards_facebook.append(create_cards(Card(i['title'],i['description'], i['source'], i['link'])))
+            cards_facebook.append(create_cards(Card(i['title'],i['description'],  i['source'], i['link'])))
 
         if len(cards_facebook)==0:
             cards_facebook.append(dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=30),"Não foram encontrados resultados"], className="m-2 mt-5")]))

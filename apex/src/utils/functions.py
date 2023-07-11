@@ -9,6 +9,7 @@ from flask_login import current_user
 import json
 
 
+
 def shorten_string(s):
     if len(s) > 27:
         return s[:24] + "..."
@@ -49,87 +50,74 @@ def create_cards(cards_list:Card):
     
     return card_append
 
-def google_search(query:str, num_result=15,as_sitesearch=None):
+def google_search(query:str, num_result=15,as_sitesearch='google'):
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36'}
     search_results = []
     query = query.replace(" ","+")
-    if as_sitesearch == 'facebook.com':
-        query += "+publicação"
-    if as_sitesearch:
-        url =  f"https://www.google.com/search?q={query}&hl=pt-BR&num={num_result}&as_sitesearch={as_sitesearch}&as_qdr=d2"
-    else:
-        url = f"https://www.google.com/search?q={query}&hl=pt-BR&num={num_result}&as_qdr=d2"
-
     search_results = []
     if current_user.serpapi_key:
-        params = {
-            "api_key": current_user.serpapi_key,
-            "engine": "google",
+        if as_sitesearch == 'google':
+            url = "https://google.serper.dev/news"
+            payload = json.dumps({
             "q": query,
-            "hl": "pt",
-            "tbm": "nws",
-            "num": num_result,
-            "as_qdr":"d2"
-        }
-        #define os parâmetros de pesquisa na SERPAPI 
-        response = requests.get('https://serpapi.com/search.json', params=params)
-        #utilizando a lib requests para solicitar a requisição e receber a resposta(response)
-        data = json.loads(response.text)
-        #cria um json com a resposta
+            "gl": "br",
+            "hl": "pt-br"
+            })
+            headers = {
+            'X-API-KEY': current_user.serpapi_key,
+            'Content-Type': 'application/json'
+            }
+            #define os parâmetros de pesquisa na SERPAPI 
+            # response = requests.get('https://serpapi.com/search.json', params=params)
+            response = requests.request("POST", url, headers=headers, data=payload)
+            #utilizando a lib requests para solicitar a requisição e receber a resposta(response)
+            data = json.loads(response.text)
+            #cria um json com a resposta
 
-        if 'news_results' in data:
-            #verifica se o json contém a chave 'new_results'
-            #cria uma lista vazia
-            for result in data['news_results']:
-                #para cada resultado(lista) nos valores da chave 'new_results' 
-                search_results.append({
-                    'title': result['title'],
-                    'link': result['link'],
-                    'description':f"{result['date']} - {result['snippet']}",
-                    'source': result['source']
-                })
-    #             #adiciona um dicionário na lista articles com os seguintes valores: title, link, date e source
-    #     else:
-    #         return []
-    return search_results
+            if 'news' in data:
+                #verifica se o json contém a chave 'new_results'
+                #cria uma lista vazia
+                for result in data['news']:
+                    #para cada resultado(lista) nos valores da chave 'new_results' 
+                    search_results.append({
+                        'title': result['title'],
+                        'link': result['link'],
+                        'description':f"{result.get('date', 'Data não informada')} - {result['snippet']}",
+                        'source': result['source']
+                    })
+        #             #adiciona um dicionário na lista articles com os seguintes valores: title, link, date e source
+        #     else:
+        #         return []
+            return search_results
+        elif as_sitesearch == 'twitter':
+            url = "https://google.serper.dev/search"
+            payload = json.dumps({
+            "q": query + "twitter",
+            "gl": "br",
+            "hl": "pt-br"
+            })
+            headers = {
+            'X-API-KEY': current_user.serpapi_key,
+            'Content-Type': 'application/json'
+            }
+            #define os parâmetros de pesquisa na SERPAPI 
+            # response = requests.get('https://serpapi.com/search.json', params=params)
+            response = requests.request("POST", url, headers=headers, data=payload)
+            #utilizando a lib requests para solicitar a requisição e receber a resposta(response)
+            data = json.loads(response.text)
+            if 'organic' in data:
+                #verifica se o json contém a chave 'new_results'
+                #cria uma lista vazia
+                for result in data['organic']:
+                    #para cada resultado(lista) nos valores da chave 'new_results' 
+                    search_results.append({
+                        'title': result['title'],
+                        'link': result['link'],
+                        'description':f"{result.get('date', 'Data não informada')} - {result['snippet']}",
+                        'source': result.get('source',"Fonte não identificada")
+                    })
+        #             #adiciona um dicionário na lista articles com os seguintes valores: title, link, date e source
+        #     else:
+        #         return []
+            return search_results
 
-    # return [dict(t) for t in {tuple(d.items()) for d in search_results}]
-
-# def get_google_news_data(query, num_results=10): #"pegar" os resultados novos do google de acordo com "query" que foi passada
-#         print('serpapi')
-#         params = {
-#             "api_key": current_user.serpapi_key,
-#             "engine": "google",
-#             "q": query,
-#             "hl": "pt",
-#             "tbm": "nws",
-#             "num": num_results,
-#             "as_qdr":"d2"
-#         }
-#         #define os parâmetros de pesquisa na SERPAPI 
-#         response = requests.get('https://serpapi.com/search.json', params=params)
-#         #utilizando a lib requests para solicitar a requisição e receber a resposta(response)
-#         data = json.loads(response.text)
-#         #cria um json com a resposta
-
-#         if 'news_results' in data:
-#             #verifica se o json contém a chave 'new_results'
-#             #se sim:
-#             articles = []
-#             #cria uma lista vazia
-#             for result in data['news_results']:
-#                 #para cada resultado(lista) nos valores da chave 'new_results' 
-#                 articles.append({
-#                     'title': result['title'],
-#                     'link': result['link'],
-#                     'date': result['date'],
-#                     'description':result['snippet'],
-#                     'source': result['source']
-#                 })
-#                 #adiciona um dicionário na lista articles com os seguintes valores: title, link, date e source
-#             return articles
-#             #retorna a lista articles
-#         else:
-#             #se não, retorna lista vazia e printa "nenhum resultado encontrado"
-#             print("No news results found.")
-#             return []
