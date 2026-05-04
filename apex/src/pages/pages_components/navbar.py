@@ -1,16 +1,21 @@
-import dash_bootstrap_components as dbc
-from dash import html, get_asset_url
-from src.config.constantes.app_constants import AppConstants
+from dash import html
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
-from flask import session
+import dash_bootstrap_components as dbc
 
-def navbar(icon = None , search_active= None,profile_active = None, my_search_active = None ):
-    LOGO = get_asset_url("img/apex.png")
+def navbar(icon=None, search_active=None, profile_active=None, my_search_active=None):
     icon_bar = dbc.Row(
         [
             dbc.Col(
-                 html.A(DashIconify(icon="clarity:logout-line", width=30), className="link-light text-white" , href="/logout"),
+                html.A(
+                    [
+                        DashIconify(icon="clarity:logout-line", width=20),
+                        html.Span("Sair"),
+                    ],
+                    className="apex-logout-link",
+                    href="/logout",
+                    title="Sair",
+                ),
                 width="auto",
             ),
         ],
@@ -22,57 +27,68 @@ def navbar(icon = None , search_active= None,profile_active = None, my_search_ac
         dbc.Container(
             [
                 html.A(
-                    # Use row and col to control vertical alignment of logo / brand
                     dbc.Row(
                         [
-                            dbc.Col(html.Img(src="https://apexconteudo.com.br/wp-content/themes/tema/img/logo-w.svg", height="40px",
-                                    className="rounded")),
-                            dbc.Col(dbc.NavbarBrand("",
-                                    className="ms-2 text-uppercase fw-bold")),
+                            dbc.Col(
+                                html.Span("apex", className="apex-wordmark")
+                            ),
                         ],
                         align="center",
                         className="g-0",
                     ),
-                    style={"textDecoration": "none"},
+                    className="apex-brand-link",
+                    href="/",
                 ),
                 icon_bar,
-            ], fluid=False
+            ],
+            class_name="apex-navbar-container",
+            fluid=False,
         ),
         color="#2b2d32",
         dark=True,
+        class_name="apex-navbar-top",
     )
+
     def get_icon(icon):
-        return DashIconify(icon=icon, height=16 , className="m-1")
+        return DashIconify(icon=icon, height=18, className="me-2")
+
+    def nav_label(icon, label):
+        return dmc.Text([get_icon(icon=icon), label], className="apex-nav-label")
     
     navbar_down = dbc.Navbar(
         dbc.Container(
-    [
-        
-        dmc.NavLink(
-            label=[dmc.Text([get_icon(icon="bi:house-door-fill"),"Área de Pesquisa"])],
-            className="text-center border",
-            active=search_active,
-            href="/"
-        ),        
-        dmc.NavLink(
-            label=[dmc.Text([get_icon(icon="material-symbols:image-search"),"Meus Relatórios"])],
-            className="text-center border",
-            active=my_search_active,
-            href="/my_reports"
-        ),
-        dmc.NavLink(
-            label=[dmc.Text([get_icon(icon="mdi:user"),"Minha Conta"])],
-            className="text-center border",
-            active=profile_active,
-            href="/profile"
-        ),
-
-        
-    ], fluid=False, class_name="text-center"
+            [
+                dmc.NavLink(
+                    label=[nav_label("bi:search", "Pesquisar")],
+                    className="apex-nav-link",
+                    active=search_active,
+                    href="/",
+                ),
+                dmc.NavLink(
+                    label=[nav_label("carbon:report", "Relatórios")],
+                    className="apex-nav-link",
+                    active=my_search_active,
+                    href="/my_reports",
+                ),
+                dmc.NavLink(
+                    label=[nav_label("mdi:account-circle-outline", "Conta")],
+                    className="apex-nav-link",
+                    active=profile_active,
+                    href="/profile",
+                ),
+                dmc.NavLink(
+                    label=[nav_label("mdi:help-circle-outline", "Instruções")],
+                    className="apex-nav-link apex-nav-link-muted",
+                    active=False,
+                    href="/profile/instructions",
+                ),
+            ],
+            fluid=False,
+            class_name="apex-nav-wrap",
         ),
         color="light",
         dark=False,
+        class_name="apex-navbar-bottom",
     )
 
-   
-    return  html.Header([navbar_up, navbar_down] )
+    return html.Header([navbar_up, navbar_down])

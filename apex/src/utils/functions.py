@@ -39,13 +39,13 @@ def create_cards(cards_list:Card):
                 dbc.CardBody(
                     [
                         html.H5(cards_list.title, className="card-title"),
-                        html.P(cards_list.body),
+                        html.P(cards_list.body, className="mb-3"),
                         dmc.Group([
                             html.P(dmc.Text(["fonte: " +cards_list.source], weight=700, color="gray",className="mb-2")),
                             html.A(dmc.Text([DashIconify(icon="ic:baseline-search", width=20),"Ver Mais"], color="white"), href=f'{cards_list.link}', target="_blank", className="btn btn-primary")]
                             , position="apart")
                     ]
-                ), class_name="mt-3"
+                ), class_name="mt-3 apex-result-card"
 )
     
     return card_append
@@ -120,4 +120,3 @@ def google_search(query:str, num_result=15,as_sitesearch='google'):
         #     else:
         #         return []
             return search_results
-

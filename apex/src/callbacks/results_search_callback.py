@@ -19,10 +19,10 @@ def create_accordion_label(label:str, icon,color, description):
     return dmc.AccordionControl(
         dmc.Group(
             [
-                DashIconify(icon=icon, color=color,width=50),
+                DashIconify(icon=icon, color=color,width=42),
                 html.Div(
                     [
-                        dmc.Title(f"{label.title()}", order=4),
+                        dmc.Title(f"{label.title()}", order=4, className="mb-1"),
                         dmc.Text(f"Data do relatório: {description}", size="sm", weight=400, color="dimmed"),
                     ]
                 ),
@@ -63,9 +63,9 @@ def update_status(_):
                     color = "green"
                     content =  [
                         modal,
-                        dmc.Group([dmc.TextInput(id={'type': 'input_email','index': result_id.result_id},placeholder="Email", style={"width": 200}),
-                        dmc.LoadingOverlay(dmc.Button("Enviar Email",id={'type': 'button_send','index': result_id.result_id}, n_clicks=0), loaderProps={"variant": "oval", "color": "blue", "size": "sm"}, )], className="mb-2"),
-                        html.Iframe(srcDoc=result.get(),  style={'width': '100%', 'height': '500px'})]
+                        dmc.Group([dmc.TextInput(id={'type': 'input_email','index': result_id.result_id},placeholder="Email", style={"width": 260}),
+                        dmc.LoadingOverlay(dmc.Button("Enviar Email",id={'type': 'button_send','index': result_id.result_id}, n_clicks=0, className="apex-button", color="#504cab"), loaderProps={"variant": "oval", "color": "#504cab", "size": "sm"}, )], className="mb-3 apex-actions-row"),
+                        html.Iframe(srcDoc=result.get(), className="apex-report-frame", style={'width': '100%', 'height': '540px'})]
                 else:              
                     task_status_singleton.set_status(result_id.result_id, "FAILURE")
                     icon = "ic:twotone-error"

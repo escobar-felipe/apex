@@ -18,30 +18,45 @@ def layout(**query_strings):
             children=[dmc.Text("Verifique seu Email e sua Senha")],
         )
         form = html.Div(
-                style={"width":300},
+                className="apex-login-card",
                 children=dmc.LoadingOverlay(
                         dmc.Stack(
                         id="loading-form",
+                        spacing="md",
                         children=[
-                                html.Img(src=get_asset_url("img/thambnail.jpeg"), width=200,className="my-3 mx-auto"),
+                                dmc.Center(
+                                        html.Img(
+                                                src=get_asset_url("img/thambnail.jpeg"),
+                                                className="apex-login-logo my-2",
+                                        )
+                                ),
+                                html.Div(
+                                        [
+                                                dmc.Title("Acesse sua conta", order=2, className="apex-page-title text-center"),
+                                                dmc.Text("Entre para pesquisar conteúdos, gerar relatórios e acompanhar seus resultados.", color="dimmed", align="center", size="sm"),
+                                        ],
+                                        className="mb-2",
+                                ),
                                 dmc.TextInput(
                                 label="Usuário",
                                 placeholder="Digite seu nome de usuário",
                                 icon=DashIconify(icon="radix-icons:person"),
-                                id='username-input'
+                                id='username-input',
+                                size="md",
                                 ),
                                 dmc.PasswordInput(
                                 label="Senha",
                                 placeholder="Digite sua senha",
                                 icon=DashIconify(icon="bi:shield-lock"),
-                                id='password-input'
+                                id='password-input',
+                                size="md",
                                 ),
                                 dmc.Button(
-                                "Entrar",  id='login-button', variant="outline", fullWidth=True, className="mt-2" ,color="#2b2d32"
+                                "Entrar",  id='login-button', fullWidth=True, className="mt-2 apex-button", color="#504cab", size="md"
                                 ),
                         ], 
                         )
-                ), className="rounded bg-white p-3"
+                )
                 )
 
 
@@ -52,5 +67,4 @@ def layout(**query_strings):
                 "height": "100%",
                 "left": 0,
                 "top": 0,
-        } , className="col bg-fixed")
-
+        } , className="apex-login-page")

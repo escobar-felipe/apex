@@ -14,10 +14,15 @@ services:
       build:
           context: ./apex
           dockerfile: Dockerfile
+      env_file:
+        - path: .env
+          required: false
       command: gunicorn --bind 0.0.0.0:5000 wsgi:app
       container_name: apex
       ports:
         - 5000:5000
+      depends_on:
+        - redis
       networks:
         - net-host
     
@@ -25,6 +30,9 @@ services:
       build:
           context: ./apex
           dockerfile: Dockerfile
+      env_file:
+        - path: .env
+          required: false
       command: celery -A wsgi:celery worker -l INFO
       depends_on:
         - redis
@@ -33,4 +41,4 @@ services:
 
 networks:
   net-host:
-    external: true
+    driver: bridge

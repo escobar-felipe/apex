@@ -9,21 +9,97 @@ from dash_iconify import DashIconify
 register_page(__name__, path='/', title="Área de Pesquisa")
 
 
+def get_missing_account_fields(user):
+    missing_fields = []
+    if not user.email:
+        missing_fields.append("Email")
+    if not user.stmp_password:
+        missing_fields.append("Senha SMTP")
+    if not user.api_key:
+        missing_fields.append("Chave API OpenAI")
+    if not user.serpapi_key:
+        missing_fields.append("Chave SerperAPI")
+    return missing_fields
+
+
 def layout(**query_strings):
     if current_user.is_authenticated:
+        missing_account_fields = get_missing_account_fields(current_user)
+        search_disabled = len(missing_account_fields) > 0
         redirect_div = html.Div( id="redirect-home")
-        alert = dmc.Alert(dmc.Text(f"""Bem vindo, {current_user.username}! Na área de pesquisa você pode buscar por artigos parem analisados por nossa inteligência artificial. Após clicar no botão de pesquisa, 
-                                   você verá uma lista de artigos relevantes com base nas suas palavras-chave.
-                                   Uma vez que a busca for finalizada vá para aba de "Relatório GPT" após ter cadastrado sua Chave OpenAI! Nessa aba poderar selecionar os artigos para serem analisados,""", size="lg"), title= dmc.Text("Área de pesquisa!", size="xl"), color="yellow", className="mt-4")
-        label_form = dmc.Text("Pesquise Aqui", size="lg" , className="mt-4 mx-2", weight=700)
-        text_input = dmc.TextInput(placeholder="Digite seu texto para realizar a busca",icon=DashIconify(icon="ic:baseline-search", width=24),id='search-state',size="md",className="mt-2")
-        button  = dmc.Button("Pesquisar", leftIcon=DashIconify(icon="ic:baseline-content-paste-search", width=22),className="mt-2" , size="md",fullWidth=True, id="button-search"),
+        missing_data_modal = dmc.Modal(
+            title="Complete os dados da sua conta",
+            id="modal-missing-account-data",
+            centered=True,
+            zIndex=10000,
+            opened=search_disabled,
+            children=[
+                dmc.Text(
+                    "Para realizar pesquisas, preencha os dados abaixo em Minha Conta.",
+                    color="dimmed",
+                    className="mb-3",
+                ),
+                dmc.List(
+                    [dmc.ListItem(field) for field in missing_account_fields],
+                    spacing="xs",
+                    withPadding=True,
+                    className="mb-3",
+                ),
+                dmc.Group(
+                    [
+                        dcc.Link(
+                            dmc.Button(
+                                "Ir para Minha Conta",
+                                leftIcon=DashIconify(icon="mdi:user-edit", width=20),
+                                className="apex-button",
+                                color="#504cab",
+                            ),
+                            href="/profile",
+                        ),
+                        dcc.Link(
+                            dmc.Button(
+                                "Ver instruções",
+                                leftIcon=DashIconify(icon="mdi:help-circle-outline", width=20),
+                                className="apex-button-outline",
+                                variant="outline",
+                                color="#504cab",
+                            ),
+                            href="/profile/instructions",
+                        ),
+                    ],
+                    position="apart",
+                ),
+            ],
+        )
+        page_header = html.Div(
+            [
+                dmc.Title("Área de Pesquisa", order=1, className="apex-page-title"),
+                dmc.Text(
+                    f"Bem vindo, {current_user.username}. Busque artigos e conteúdos por palavra-chave, revise os resultados e gere um relatório com apoio da IA.",
+                    className="apex-page-subtitle",
+                ),
+            ],
+            className="mt-4 mb-4",
+        )
+        alert = dmc.Alert(
+            dmc.Text(
+                "Após pesquisar, os resultados aparecerão nas abas por origem. Quando a busca terminar, use a aba Relatório GPT para selecionar os textos que serão analisados.",
+                size="md",
+            ),
+            title=dmc.Text("Fluxo de pesquisa", weight=700),
+            color="yellow",
+            className="apex-alert mb-4",
+        )
+        label_form = dmc.Text("Termo de busca", size="md", weight=700, className="mb-2")
+        text_input = dmc.TextInput(placeholder="Digite uma marca, tema ou palavra-chave",icon=DashIconify(icon="ic:baseline-search", width=24),id='search-state',size="md")
+        button  = dmc.Button("Pesquisar", leftIcon=DashIconify(icon="ic:baseline-content-paste-search", width=22), size="md", fullWidth=True, className="apex-button", color="#504cab", disabled=search_disabled, id="button-search")
         form_search =dmc.Grid(
                         children=[
-                            dmc.Col(html.Div(text_input), span=10),
-                            dmc.Col(html.Div(button), span="auto"),
+                            dmc.Col(html.Div([label_form, text_input]), span=12, md=9),
+                            dmc.Col(html.Div(button), span=12, md=3),
                         ],
-                        gutter="xl",
+                        gutter="md",
+                        className="apex-search-grid",
                     )
         
         store_search = dcc.Store(id="search_value",data=None,storage_type="memory")
@@ -33,7 +109,7 @@ def layout(**query_strings):
             dmc.LoadingOverlay(dbc.Col([
             html.Div([],id='alert-div'),
             dmc.Alert("Selecione pelo menos um texto para gerar o relatório!", title="Mensagem!", color="red", hide=True, duration=5000, id="alert-multi-select",className="mt-3"),
-            dmc.Title(f"Relatório GPT", order=1, className="mt-4"),
+            dmc.Title(f"Relatório GPT", order=2, className="apex-page-title mt-4"),
             dmc.Timeline(
                 active=3,
                 bulletSize=15,
@@ -76,20 +152,20 @@ def layout(**query_strings):
                 ],
             ),
             html.Div(
-            [          
+            [
                 dbc.Label("Selecione os textos:", html_for="multiselect-text"),
             dmc.MultiSelect(
                         data=[],
                         searchable=True,
                         nothingFound="Nenhuma opção encontrada",
-                        style={"width": "400"},
+                        style={"width": "100%"},
                         id ="multiselect-text",
                         required=True
                     ),
                 dbc.FormText(
                     "Selecione os textos para serem analisados", color="secondary"
                 )]),
-            dmc.Button("Gerar relatório", leftIcon=DashIconify(icon="mdi:report-box", width=22),className="p-2 my-4" , size="md",fullWidth=True,id="button-report")],class_name="col-md-12"))
+            dmc.Button("Gerar relatório", leftIcon=DashIconify(icon="mdi:report-box", width=22),className="p-2 my-4 apex-button" , size="md",fullWidth=True,color="#504cab",id="button-report")],class_name="col-md-12 apex-soft-panel"))
         ]
    
 
@@ -103,15 +179,15 @@ def layout(**query_strings):
                             dmc.Tab(dmc.Text("Relatório GPT", size="md"), icon=DashIconify(icon="carbon:report",width=22), value="chatgpt", id="chatgpt_tittle",disabled=True),
                         ]
                     ),
-                    dmc.TabsPanel(dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=30),"Faça uma pesquisa para encontrar os resultados"], className="m-2 mt-5")]), value="google", id="google_tabs"),
-                    dmc.TabsPanel(dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=30),"Faça uma pesquisa para encontrar os resultados"], className="m-2 mt-5")]), value="twitter" ,id="twitter_tabs"),
-                    dmc.TabsPanel(dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=30),"Faça uma pesquisa para encontrar os resultados"], className="m-2 mt-5")]), value="facebook", id="facebook_tabs"),
+                    dmc.TabsPanel(dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=34),"Faça uma pesquisa para encontrar os resultados"], className="m-2 mt-5")], className="apex-empty-state"), value="google", id="google_tabs"),
+                    dmc.TabsPanel(dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=34),"Faça uma pesquisa para encontrar os resultados"], className="m-2 mt-5")], className="apex-empty-state"), value="twitter" ,id="twitter_tabs"),
+                    dmc.TabsPanel(dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=34),"Faça uma pesquisa para encontrar os resultados"], className="m-2 mt-5")], className="apex-empty-state"), value="facebook", id="facebook_tabs"),
                     dmc.TabsPanel(report_tab, value="chatgpt", id="chatgpt_tabs"),
                 ],
-                value="google", className="mt-4"
-            ), loaderProps={"variant": "dots", "color": "blue", "size": "xl"},)
-        content = dbc.Container([dbc.Col([store_search, store_links,alert,label_form,form_search,tabs, redirect_div])], fluid=False)
-        body = html.Div([navbar(icon=None, search_active=True),content]) 
+                value="google", className="apex-tabs"
+            ), loaderProps={"variant": "dots", "color": "#504cab", "size": "xl"},)
+        content = dbc.Container([dbc.Col([store_search, store_links,missing_data_modal,page_header,alert,html.Div(form_search, className="apex-panel mb-4"),tabs, redirect_div])], fluid=False, class_name="apex-container")
+        body = html.Div([navbar(icon=None, search_active=True),content], className="apex-shell")
         return body   
     else:
         return dcc.Location(pathname="/login", id="someid_doesnt_matter")

@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Local runtime data
+apex/flask_session/
+apex/src/database.db
+*.sqlite
+*.sqlite3
+
+# OS and editor
+.DS_Store
+.idea/
+
+# Logs
+*.log
+logs/

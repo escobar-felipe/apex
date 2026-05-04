@@ -15,10 +15,10 @@ def create_accordion_label(label:str, icon,color, description):
     return dmc.AccordionControl(
         dmc.Group(
             [
-                DashIconify(icon=icon, color=color,width=50),
+                DashIconify(icon=icon, color=color,width=42),
                 html.Div(
                     [
-                        dmc.Title(f"{label.title()}", order=4),
+                        dmc.Title(f"{label.title()}", order=4, className="mb-1"),
                         dmc.Text(f"Data do relatório: {description}", size="sm", weight=400, color="dimmed"),
                     ]
                 ),
@@ -33,8 +33,18 @@ def create_accordion_content(content):
 
 def layout(**query_strings):
     if current_user.is_authenticated:
-        alert = dmc.Alert(dmc.Text(f"""Aqui se encontram todos os seus relatórios, para encaminhar seu relatório complete o campo "EMAIL" no relatório desejado e clique em "ENVIAR".""", size="lg",), title=dmc.Text(
-            "Relatórios", size="xl"), color="yellow", className="mt-4")
+        page_header = html.Div(
+            [
+                dmc.Title("Meus Relatórios", order=1, className="apex-page-title"),
+                dmc.Text(
+                    "Acompanhe relatórios em processamento, revise os resultados prontos e envie análises por email.",
+                    className="apex-page-subtitle",
+                ),
+            ],
+            className="mt-4 mb-4",
+        )
+        alert = dmc.Alert(dmc.Text(f"""Para encaminhar um relatório, preencha o campo "Email" no item desejado e clique em "Enviar Email".""", size="md",), title=dmc.Text(
+            "Relatórios salvos", weight=700), color="yellow", className="apex-alert mb-4")
         
         results_id = SearchResult.query.filter_by(user_id=current_user.id).order_by(SearchResult.created_at.desc()).all(),
         children_accordion = []
@@ -60,9 +70,9 @@ def layout(**query_strings):
                         content = [dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=30),f"{result.get()['error']}"], className="m-2 mt-5")])]
                     content =  [
                         modal,
-                        dmc.Group([dmc.TextInput(id={'type': 'input_email','index': result_id.result_id},placeholder="Email", style={"width": 200}),
-                        dmc.LoadingOverlay(dmc.Button("Enviar Email",id={'type': 'button_send','index': result_id.result_id}, n_clicks=0), loaderProps={"variant": "oval", "color": "blue", "size": "sm"}, )], className="mb-2"),
-                        html.Iframe(srcDoc=result.get(),  style={'width': '100%', 'height': '500px'})]
+                        dmc.Group([dmc.TextInput(id={'type': 'input_email','index': result_id.result_id},placeholder="Email", style={"width": 260}),
+                        dmc.LoadingOverlay(dmc.Button("Enviar Email",id={'type': 'button_send','index': result_id.result_id}, n_clicks=0, className="apex-button", color="#504cab"), loaderProps={"variant": "oval", "color": "#504cab", "size": "sm"}, )], className="mb-3 apex-actions-row"),
+                        html.Iframe(srcDoc=result.get(),  className="apex-report-frame", style={'width': '100%', 'height': '540px'})]
                 elif result.state == 'PENDING':
                     task_status_singleton.set_status(result_id.result_id, "PENDING")
                     icon = "line-md:downloading-loop"
@@ -98,20 +108,20 @@ def layout(**query_strings):
                         )
                 children_accordion.append(item)
         else:
-            children_accordion.append(dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=30),"Nenhum relatório encontrado"], className="m-2 mt-5")]))
+            children_accordion.append(dmc.Center([dmc.Text([DashIconify(icon="ic:baseline-search", width=34),"Nenhum relatório encontrado"], className="m-2 mt-5")], className="apex-empty-state"))
                     
         list_tasks = html.Div([dmc.Accordion(
             chevronPosition="right",
             variant="contained",
             children=children_accordion,
-            className="mt-4",
+            className="apex-panel",
             id='center-body'
         )])
         interval = dcc.Interval(id='interval', interval=5000)
     
         content = dbc.Container(
-            [dbc.Col([alert,list_tasks,interval])], fluid=False)
-        body = html.Div([navbar(icon=None, my_search_active=True), content])
+            [dbc.Col([page_header, alert,list_tasks,interval])], fluid=False, class_name="apex-container")
+        body = html.Div([navbar(icon=None, my_search_active=True), content], className="apex-shell")
         return body
     else:
         return dcc.Location(pathname="/login", id="redirect_login_page")

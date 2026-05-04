@@ -23,8 +23,9 @@ class Settings(BaseSettings):
     limit: int = int(getenv('LIMIT', 1500))
     base_url = os.getenv('BASE_URL', '/')
     redis_db = os.getenv('REDIS_HOST', 'redis://redis:6379')
+    database_url = os.getenv('DATABASE_URL')
 
-    secret_session = 'd5c80696-9675-4047-98a6-acac6dfb247e'
+    secret_session = os.getenv('SECRET_SESSION', 'dev-secret-session-change-me')
     theme_default = 'BOOTSTRAP'
     theme_icon = icons.BOOTSTRAP
         

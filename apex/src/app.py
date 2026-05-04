@@ -21,7 +21,7 @@ def create_flask_app():
     
     server.config['CACHE_TYPE'] = 'redis'
     server.config['CACHE_REDIS_URL'] = f'{settings.redis_db}/10'
-    server.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
+    server.config['SQLALCHEMY_DATABASE_URI'] = settings.database_url or 'sqlite:///' + os.path.join(basedir, 'database.db')
     server.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
     server.config['CELERY_BROKER_URL']= f"{settings.redis_db}/3"

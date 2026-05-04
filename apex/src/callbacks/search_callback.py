@@ -36,6 +36,7 @@ def search_callback(n_clicks, search_query):
                             len(search_google),
                             size="xs",
                             p=0,
+                            color="#504cab",
                             variant="filled",
                             sx={"width": 16, "height": 16, "pointerEvents": "none"},
                         )
@@ -43,6 +44,7 @@ def search_callback(n_clicks, search_query):
                         len(search_twitter),
                         size="xs",
                         p=0,
+                        color="#504cab",
                         variant="filled",
                         sx={"width": 16, "height": 16, "pointerEvents": "none"},
                     )
@@ -50,6 +52,7 @@ def search_callback(n_clicks, search_query):
                         len(search_facebook),
                         size="xs",
                         p=0,
+                        color="#504cab",
                         variant="filled",
                         sx={"width": 16, "height": 16, "pointerEvents": "none"},
                     )

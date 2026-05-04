@@ -11,55 +11,78 @@ register_page(__name__, path='/profile', title="Meu Perfil")
 def layout(**query_strings):
     if current_user.is_authenticated:
         redirect_div = html.Div(id="redirect-user-page")
-        alert = dmc.Alert(dmc.Group([dmc.Text(f"Para realizar o cadastro do seus dados, siga as instruções:", size="lg"), dcc.Link("Clique aqui!", className="fs-6" ,href="https://www.google.com/drive", style={"color":"blue"})]), title=dmc.Text(
-            "Informações", size="xl"), color="yellow", className="mt-4")
-        api_key_input = html.Div(
-            [          
-                dbc.Label("Email", html_for="email_user"),
-                dbc.Input(
-                    type="text",
-                    id="email_user",
-                    placeholder="Seu email",
-                    value=current_user.email
-                ),
-                dbc.FormText(
-                    "Entre com email (Gmail).", color="secondary"
-                ),        
-                dmc.Space(h=20),   
-                dbc.Label("Senha STMP", html_for="stmp_password"),
-                dbc.Input(
-                    type="text",
-                    id="stmp_password",
-                    placeholder="Sua senha STMP",
-                    value=current_user.stmp_password
-                ), 
-                dbc.FormText(
-                    "Entre com sua senha STMP.", color="secondary"
-                ),
-                dmc.Space(h=20),
-                dbc.Label("Chave API", html_for="open-api-key"),
-                dbc.Input(
-                    type="text",
-                    id="open-api-key",
-                    placeholder="Sua chave OpenAI",
-                    value=current_user.api_key
-                ),
-                dbc.FormText(
-                    "Entre com sua chave da API OpenAI.", color="secondary"
-                ),
-                dmc.Space(h=20),
-                dbc.Label("Chave SerperAPI", html_for="serp-api-key"),
-                dbc.Input(
-                    type="text",
-                    id="serp-api-key",
-                    placeholder="Sua chave SerperAPI",
-                    value=current_user.serpapi_key
-                ),
-                dbc.FormText(
-                    "Entre com sua chave SerperAPI.", color="secondary"
+        page_header = html.Div(
+            [
+                dmc.Title("Minha Conta", order=1, className="apex-page-title"),
+                dmc.Text(
+                    "Mantenha suas credenciais atualizadas para pesquisar, gerar relatórios e enviar emails pelo sistema.",
+                    className="apex-page-subtitle",
                 ),
             ],
-            className="mb-3",
+            className="mt-4 mb-4",
+        )
+        alert = dmc.Alert(dmc.Group([dmc.Text(f"Para realizar o cadastro dos seus dados, siga as instruções:", size="md"), dcc.Link("Clique aqui!", className="fs-6 apex-link" ,href="/profile/instructions")]), title=dmc.Text(
+            "Informações", weight=700), color="yellow", className="apex-alert mb-4")
+        api_key_input = html.Div(
+            [          
+                html.Div(
+                    [
+                        dbc.Label("Email", html_for="email_user"),
+                        dbc.Input(
+                            type="text",
+                            id="email_user",
+                            placeholder="Seu email",
+                            value=current_user.email
+                        ),
+                        dbc.FormText(
+                            "Entre com email (Gmail).", color="secondary"
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        dbc.Label("Senha SMTP", html_for="stmp_password"),
+                        dbc.Input(
+                            type="text",
+                            id="stmp_password",
+                            placeholder="Sua senha SMTP",
+                            value=current_user.stmp_password
+                        ),
+                        dbc.FormText(
+                            "Entre com sua senha SMTP.", color="secondary"
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        dbc.Label("Chave API", html_for="open-api-key"),
+                        dbc.Input(
+                            type="text",
+                            id="open-api-key",
+                            placeholder="Sua chave OpenAI",
+                            value=current_user.api_key
+                        ),
+                        dbc.FormText(
+                            "Entre com sua chave da API OpenAI.", color="secondary"
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        dbc.Label("Chave SerperAPI", html_for="serp-api-key"),
+                        dbc.Input(
+                            type="text",
+                            id="serp-api-key",
+                            placeholder="Sua chave SerperAPI",
+                            value=current_user.serpapi_key
+                        ),
+                        dbc.FormText(
+                            "Entre com sua chave SerperAPI.", color="secondary"
+                        ),
+                    ]
+                ),
+            ],
+            className="apex-form-grid",
         )
         button = dmc.Center(
             style={"height": "auto", "width": "100%"},
@@ -67,7 +90,8 @@ def layout(**query_strings):
                 dmc.Button(
                     "Salvar Dados",
                     leftIcon=DashIconify(icon="fluent:database-plug-connected-20-filled"),
-                    className="my-2",
+                    className="my-2 apex-button",
+                    color="#504cab",
                     id= "btn-update-user",
                 )
             ],
@@ -83,8 +107,8 @@ def layout(**query_strings):
 
         form=  dmc.LoadingOverlay(dbc.Form([api_key_input], class_name="mt-4", id="form-user"))
         content = dbc.Container(
-            [dbc.Col([alert, redirect_div, form, button,modal])], fluid=False)
-        body = html.Div([navbar(icon=None, profile_active=True), content])
+            [dbc.Col([page_header, alert, redirect_div, html.Div(form, className="apex-panel apex-profile-form"), button,modal])], fluid=False, class_name="apex-container")
+        body = html.Div([navbar(icon=None, profile_active=True), content], className="apex-shell")
         return body
     else:
         return dcc.Location(pathname="/login", id="someid_login")
