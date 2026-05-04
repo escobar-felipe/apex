@@ -1,208 +1,377 @@
+import html
+import json
+import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
-import openai
+from dataclasses import dataclass
+from typing import Any, Optional
+
 import pandas as pd
 from newspaper import Article
+from openai import OpenAI
 
-#classe com os métodos para realizar as análises
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class MonitoringConfig:
+    analysis_model: str = "gpt-5-mini"
+    report_model: str = "gpt-5-mini"
+    max_input_chars: int = 14500
+    max_article_tokens: int = 18000
+    max_output_tokens: int = 18000
+    request_delay_seconds: float = 2.0
+    temperature: float = 0.5
+
+
 class MonitoringAndAnalysis:
-    def __init__(self, tokenizer,articles, openai_api_key):
+    """
+    Classe responsável por:
+    - Baixar textos de artigos usando newspaper3k
+    - Analisar os artigos com OpenAI
+    - Salvar os resultados em um DataFrame
+    - Gerar um relatório HTML consolidado
+    """
+
+    ANALYSIS_COLUMNS = {
+        "main_themes": "Temas principais",
+        "resume": "Resumo",
+        "narratives": "Narrativas",
+        "opinions": "Opiniões",
+        "spokespersons": "Porta-vozes",
+        "biases": "Viés",
+        "emotion": "Emoção do artigo",
+    }
+
+    DEFAULT_RESUME_ERROR = (
+        "Nossa Inteligência Artificial não conseguiu gerar um resumo para esse artigo."
+    )
+
+    def __init__(
+        self,
+        tokenizer: Any,
+        articles: list[dict[str, Any]],
+        openai_api_key: str,
+        config: Optional[MonitoringConfig] = None,
+    ) -> None:
         self.tokenizer = tokenizer
-        self.articles =articles
-        self.embeddings =None
-        self.error = None
+        self.articles = articles
+        self.config = config or MonitoringConfig()
+
+        self.client = OpenAI(api_key=openai_api_key)
+
         self.df = pd.DataFrame()
-        
-        openai.api_key = openai_api_key
+        self.error: Optional[str] = None
 
-    def truncate_text(self,text, max_tokens):
+    def truncate_text(self, text: str, max_tokens: Optional[int] = None) -> str:
         """
-        Truncate the input text to the specified maximum number of tokens using the GPT-2 tokenizer.
-
-        Args:
-            text (str): The input text to be tokenized and truncated.
-            max_tokens (int): The maximum number of tokens to keep.
-
-        Returns:
-            str: The truncated text.
+        Limita o texto usando o tokenizer informado.
+        Mantém o corte inicial por caracteres para evitar textos muito grandes.
         """
-        text = text[:4500]
-        # Tokenize the text and get the token IDs
+        if not text:
+            return ""
+
+        max_tokens = max_tokens or self.config.max_article_tokens
+
+        text = text[: self.config.max_input_chars]
         token_ids = self.tokenizer.encode(text)
-        #cria lista de IDs de token
 
-        # Truncate the token IDs if they exceed the maximum number of tokens
         if len(token_ids) > max_tokens:
             token_ids = token_ids[:max_tokens]
-        #Aqui a função verifica o comprimento do texto tokenizado, representado como uma lista de IDs de token.
-        #Se o comprimento exceder o número máximo especificado de tokens (max_tokens), 
-        # a função irá limitar a lista de IDs de token para manter apenas os primeiros tokens max_tokens.
 
-        # Convert the truncated token IDs back to text
-        truncated_text = self.tokenizer.decode(token_ids)
-        #Aqui converte a lista de IDS de token de volta em um texto usando a função de decodificação.
-        return truncated_text
+        return self.tokenizer.decode(token_ids)
 
-    def fetch_articles(self, articles):
-        #gerando os vetores de entrada de acordo com os textos(artigos pesquisados)
-        #rótulos de cluster previstos para cada entrada
-        article_list = []
-        #cria uma lista vazia
-        for i, article in enumerate(articles):
-            #utiliza a classe enumerate() para iterar por todos os elementos da lista(articles)
-            # para cada artigo - crie um dicionário contendo:
-            article_dict = {
-                'brand': article['brand'], #tópico pesquisado
-                'title': article['title'], #título
-                'link': article['link'], #link
-                'source': article['source'], #fonte
-                'text': self.scrape_article(article['link']),  #texto extraido
-            }
-            article_list.append(article_dict)
-            #adiciona o dicionário no variável article_list
-        df = pd.DataFrame(article_list)
-        #transforma a lista article_list in dataframe 
-        return df
-        #retorna o dataframe contendo as informações do dicionário em cada linha.
-
-    def scrape_article(self,url): #função que realiza o webscreaping dos textos
+    def scrape_article(self, url: str) -> str:
+        """
+        Baixa e extrai o conteúdo textual de uma URL.
+        Retorna título + texto.
+        """
         article = Article(url)
-        #passando a url para classe Argicle para extração deo conteúdo do texto.
+
         try:
             article.download()
-            #chamando o method download
             article.parse()
-            print(f"Sucess to download Article: {article.title}")
-        except Exception as e:
-            print(f"Failed to Download Article: {e}")
-        return article.title + " " + article.text
-        #retorna uma string: título + " " + texto
 
-    def analyze_articles(self,df:pd.DataFrame):
-            #cria uma lista vazia futures
-        for i, row in df.iterrows():
-            #method iterrows para percorrer as linhas do dataframe
-            time.sleep(2)
-            #timer para ajustar as requisições
-            article_text = row["text"]
-            #extrai o texto de acordo com a coluna texto
-            article_text = self.truncate_text(article_text, 1800)
-            #limita 2000 o texto a partir da função truncate_text baseado no tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-            prompt = (
-            f"Por favor, analise este artigo de notícias e forneça um resumo abrangente com base nas seguintes categorias. Por favor, responda a todas as partes do seguinte:\n\n"
-            f"Temas principais: Identifique os tópicos centrais discutidos no artigo.\n"
-            f"Resumo: Crie um breve resumo desse artigo\n"
-            f"Narrativas: Descreva quaisquer histórias ou mensagens abrangentes presentes no artigo.\n"
-            f"Opiniões: Mencione os principais pontos de vista ou perspectivas expressos no artigo, juntamente com suas fontes (se mencionadas).\n"
-            f"Porta-vozes: Liste quaisquer indivíduos ou organizações mencionados como fontes, juntamente com seus papéis ou afiliações.\n"
-            f"Viés: Aponte quaisquer possíveis preconceitos no artigo, seja por meio de linguagem, perspectiva ou foco.\n"
-            f"Emoção do artigo: Determine a(s) emoção(ões) dominante(s) transmitida(s) pelo artigo (por exemplo, positiva, negativa, neutra, etc.).\n\n"
-            f"Por favor, forneça sua análise em um formato bem estruturado e conciso. Use marcadores ou listas numeradas para tornar sua resposta mais fácil de ler e entender.\n\n"
-            f"Este é o artigo de notícias a ser avaliado. Forneça apenas os dados solicitados e nada mais antes de Temas principais: \n\n {article_text}"
+            logger.info("Article downloaded successfully: %s", article.title)
+
+            return f"{article.title or ''} {article.text or ''}".strip()
+
+        except Exception as exc:
+            logger.exception("Failed to download article: %s", url)
+            self.error = str(exc)
+            return ""
+
+    def fetch_articles(self, articles: Optional[list[dict[str, Any]]] = None) -> pd.DataFrame:
+        """
+        Converte a lista de artigos em DataFrame e adiciona o texto extraído.
+        """
+        articles = articles or self.articles
+        rows: list[dict[str, Any]] = []
+
+        for article in articles:
+            rows.append(
+                {
+                    "brand": article.get("brand", ""),
+                    "title": article.get("title", ""),
+                    "link": article.get("link", ""),
+                    "source": article.get("source", ""),
+                    "text": self.scrape_article(article.get("link", "")),
+                }
             )
-            #cria a variável string(prompt) no qual recebe o texto que contém as instruções para a análise a ser executada pelo modelo GPT-3 
-            # juntamente com o texto do artigo (limitado)
+
+        return pd.DataFrame(rows)
+
+    def build_analysis_prompt(self, article_text: str) -> str:
+        """
+        Cria o prompt de análise e pede JSON para facilitar o parsing.
+        """
+        return f"""
+Analise este artigo de notícias e responda apenas em JSON válido.
+
+Use exatamente estas chaves:
+- "Temas principais"
+- "Resumo"
+- "Narrativas"
+- "Opiniões"
+- "Porta-vozes"
+- "Viés"
+- "Emoção do artigo"
+
+Regras:
+- Seja claro e conciso.
+- Não adicione texto fora do JSON.
+- Caso alguma informação não exista, retorne uma string vazia.
+
+Artigo:
+{article_text}
+""".strip()
+
+    def parse_analysis_response(self, content: str) -> dict[str, str]:
+        """
+        Faz parsing da resposta do modelo.
+        Se o JSON vier malformado, tenta retornar um fallback seguro.
+        """
+        if not content:
+            return {}
+
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, dict):
+                return {str(key): str(value) for key, value in parsed.items()}
+        except json.JSONDecodeError:
+            logger.warning("Model response is not valid JSON. Trying fallback parser.")
+
+        return self.fallback_parse_response(content)
+
+    def fallback_parse_response(self, content: str) -> dict[str, str]:
+        """
+        Parser alternativo para respostas no formato:
+        Chave: valor
+        """
+        parsed_data: dict[str, str] = {}
+
+        for line in content.splitlines():
+            if ":" not in line:
+                continue
+
+            key, value = line.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+
+            if key:
+                parsed_data[key] = value
+
+        return parsed_data
+
+    def analyze_single_article(self, article_text: str) -> dict[str, str]:
+        """
+        Envia um artigo para análise no modelo.
+        """
+        truncated_text = self.truncate_text(article_text)
+        prompt = self.build_analysis_prompt(truncated_text)
+
+        response = self.client.chat.completions.create(
+            model=self.config.analysis_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Você é um especialista em análise de mídia, "
+                        "relações públicas, psicologia e comportamento humano."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_completion_tokens=self.config.max_output_tokens,
+            # temperature=self.config.temperature,
+        )
+
+        content = response.choices[0].message.content or ""
+        return self.parse_analysis_response(content.strip())
+
+    def analyze_articles(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Analisa os artigos do DataFrame e adiciona as colunas de resultado.
+        """
+        if df.empty:
+            return df
+
+        df = df.copy()
+
+        for index, row in df.iterrows():
             try:
-                response = openai.Completion.create(
-                    model="text-davinci-003",
-                    prompt=prompt,
-                    max_tokens=1800,
-                    n=1,
-                    stop=None,
-                    temperature=0.5,
+                if self.config.request_delay_seconds:
+                    time.sleep(self.config.request_delay_seconds)
+
+                article_text = row.get("text", "")
+                parsed_data = self.analyze_single_article(article_text)
+
+                df.loc[index, "main_themes"] = parsed_data.get("Temas principais", "")
+                df.loc[index, "resume"] = parsed_data.get(
+                    "Resumo",
+                    self.DEFAULT_RESUME_ERROR,
                 )
+                df.loc[index, "narratives"] = parsed_data.get("Narrativas", "")
+                df.loc[index, "opinions"] = parsed_data.get("Opiniões", "")
+                df.loc[index, "spokespersons"] = parsed_data.get("Porta-vozes", "")
+                df.loc[index, "biases"] = parsed_data.get("Viés", "")
+                df.loc[index, "emotion"] = parsed_data.get("Emoção do artigo", "")
 
-                output_text = response.choices[0].text.strip()
-                output_list = output_text.split("\n\n")
-                parsed_data = {}
+            except Exception as exc:
+                logger.exception("Failed to analyze article at index %s", index)
+                self.error = str(exc)
 
-                for item in output_list:
-                    key, value = item.split(":", 1)
-                    parsed_data[key.strip()] = value.strip()
-
-                required_keys = ["Temas principais", "Resumo"]
-                if all(key in parsed_data for key in required_keys):
-                    df.loc[i, "main_themes"] = parsed_data.get("Temas principais", "")
-                    df.loc[i, "resume"] = parsed_data.get("Resumo", "Nossa Inteligência Artificial não conseguiu gerar um resumo para esse artigo.")
-                    df.loc[i, "narratives"] = parsed_data.get("Narrativas", "")
-                    df.loc[i, "opinions"] = parsed_data.get("Opiniões", "")
-                    df.loc[i, "spokespersons"] = parsed_data.get("Porta-vozes", "")
-                    df.loc[i, "biases"] = parsed_data.get("Viés", "")
-                    df.loc[i, "emotion"] = parsed_data.get("Emoção do artigo", "")
-                    
-        
-            except Exception as e:
-                self.error= str(e)
+                df.loc[index, "resume"] = self.DEFAULT_RESUME_ERROR
 
         return df
-    
-    def get_analyze_from_articles(self):
+
+    def get_analyze_from_articles(self) -> pd.DataFrame:
+        """
+        Executa o fluxo completo:
+        1. Busca os artigos
+        2. Analisa os artigos
+        3. Retorna o DataFrame final
+        """
         self.df = self.fetch_articles(self.articles)
         self.df = self.analyze_articles(self.df)
+
         return self.df
-    
 
+    def build_report_prompt(
+        self,
+        most_common: dict[str, int],
+        spokesperson_counts: dict[str, int],
+        bias_counts: dict[str, int],
+    ) -> str:
+        return f"""
+Gere um relatório de monitoramento de mídia com base nos dados abaixo.
 
-    def generate_report(self,most_common, spokesperson_counts, bias_counts):
-        prompt = (
-        f"Por favor, gere um relatório de monitoramento de mídia com base nos seguintes dados resumidos:\n\n"
-        f"Informações mais comuns:\n{most_common}\n\n"
-        f"Porta-vozes mais frequentemente mencionados:\n{spokesperson_counts}\n\n"
-        f"Artigos ou fontes mais tendenciosos:\n{bias_counts}\n\n"
-        f"Escreva um relatório bem estruturado e conciso resumindo as principais descobertas dos dados fornecidos."
+Informações mais comuns:
+{most_common}
+
+Porta-vozes mais frequentemente mencionados:
+{spokesperson_counts}
+
+Artigos ou fontes mais tendenciosos:
+{bias_counts}
+
+Escreva um relatório bem estruturado e conciso resumindo as principais descobertas.
+""".strip()
+
+    def generate_report(
+        self,
+        most_common: dict[str, int],
+        spokesperson_counts: dict[str, int],
+        bias_counts: dict[str, int],
+    ) -> str:
+        """
+        Gera o relatório consolidado com base nas análises dos artigos.
+        """
+        prompt = self.build_report_prompt(
+            most_common=most_common,
+            spokesperson_counts=spokesperson_counts,
+            bias_counts=bias_counts,
         )
-        #cria uma váriavel(prompt) com o texto de pesquisa na OpenIA API baseado nas informações passadas (most_common, cluster_counts, emotion_by_cluster, spokesperson_counts, bias_counts)
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages = [
-            {"role": "system", "content": "Por favor, simule um especialista em análise de mídia com sólida formação em psicologia e comportamento humano, que seja um especialista mundial em Relações Públicas."},
-            {"role": "user", "content": prompt}],
-            max_tokens=1024,
-            n=1,
-            stop=None,
-            temperature=0.5,
+        response = self.client.chat.completions.create(
+            model=self.config.report_model,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Você é um especialista em análise de mídia, "
+                        "psicologia, comportamento humano e relações públicas."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            max_completion_tokens=4024,
+            # temperature=self.config.temperature,
         )
-        #utiliza a biblioteca Openia para realizar a requisação na api com os
-        #parâmetros necessários, como nome do modelo gpt-3.5-turbo, messages, número máximo de tokens, número de conclusões (definido como 1),
-        #sequência de parada (definido como None) e temperatura para controlar a aleatoriedade do texto gerado.
-        #salva a resposta(response)
 
-        output_text = response['choices'][0]['message']['content'].strip()
-        #extrair do dicionário(response) o valor da chave choice(lista) na posição zero, extrair da chave message > content o valor e chama o método strip
-        #strip remove os espaços do início e do fim do texto
-        return output_text
-        #retorna o valor
+        return (response.choices[0].message.content or "").strip()
 
-    def analyze_dataframe(self):
-        if len(self.df.index)>0:
-            df = self.df.drop_duplicates()
-            if 'main_themes' in df.columns:
-                
-                result = ""
-            # Extract summary information
-                most_common = df['main_themes'].value_counts().head(5).to_dict()
-                spokesperson_counts = df['spokespersons'].value_counts().head(5).to_dict()
-                bias_counts = df['biases'].value_counts().head(5).to_dict()
-                #extrai as informações do dataframe baseado nas colunas para utilizar na função generate_report
-                for i, j in df.iterrows():
-                    if not pd.isna(j['resume']):
-                        result += f"""<h3>{j['title']}</h3>"""
-                        result +=  f"""<p style="font-size:16;margin:0 0 20px 0;font-family:Arial,sans-serif;">{j['resume']}</p>"""
-                        result += f"""<p style="font-size:16;margin:0 0 20px 0;font-family:Arial,sans-serif;">Fonte: {j['source']} </p>"""
-                        result += "<br>"
-                    else:
-                        result += f"""<h3>{j['title']}</h3>"""
-                        result +=  f"""<p style="font-size:16;margin:0 0 20px 0;font-family:Arial,sans-serif;">Nossa Inteligência Artificial não conseguiu gerar um resumo para esse artigo.</p>"""
-                        result += f"""<p style="font-size:16;margin:0 0 20px 0;font-family:Arial,sans-serif;">Fonte: {j['source']} </p>"""
-                        result += "<br>"
-                # Generate the GPT-based report
-                report = self.generate_report(most_common, spokesperson_counts, bias_counts),
-                #passa os parâmetros para a função generate a report
-                result += f"""<h3>Análise</h3><br><p style="font-size:16;margin:0 0 20px 0;font-family:Arial,sans-serif;">{report[0]}</p>"""
-                return result 
-            else:
-                if self.error:
-                    raise Exception(self.error)
-        else:
-            raise Exception("Resultado incompleto, falha na integração com GPT. Entre em contato com o suporte para ajustar")
+    def analyze_dataframe(self) -> str:
+        """
+        Gera o HTML final com:
+        - Resumo de cada artigo
+        - Fonte
+        - Relatório consolidado
+        """
+        if self.df.empty:
+            raise Exception(
+                "Resultado incompleto, falha na integração com GPT. "
+                "Entre em contato com o suporte para ajustar."
+            )
+
+        df = self.df.drop_duplicates().copy()
+
+        if "main_themes" not in df.columns:
+            if self.error:
+                raise Exception(self.error)
+
+            raise Exception("Nenhuma análise foi gerada para os artigos.")
+
+        most_common = df["main_themes"].value_counts().head(5).to_dict()
+        spokesperson_counts = df["spokespersons"].value_counts().head(5).to_dict()
+        bias_counts = df["biases"].value_counts().head(5).to_dict()
+
+        html_parts: list[str] = []
+
+        for _, row in df.iterrows():
+            title = html.escape(str(row.get("title", "")))
+            source = html.escape(str(row.get("source", "")))
+
+            resume = row.get("resume")
+            if pd.isna(resume) or not str(resume).strip():
+                resume = self.DEFAULT_RESUME_ERROR
+
+            resume = html.escape(str(resume))
+
+            html_parts.append(f"<h3>{title}</h3>")
+            html_parts.append(
+                '<p style="font-size:16px;margin:0 0 20px 0;font-family:Arial,sans-serif;">'
+                f"{resume}"
+                "</p>"
+            )
+            html_parts.append(
+                '<p style="font-size:16px;margin:0 0 20px 0;font-family:Arial,sans-serif;">'
+                f"Fonte: {source}"
+                "</p>"
+            )
+            html_parts.append("<br>")
+
+        report = self.generate_report(
+            most_common=most_common,
+            spokesperson_counts=spokesperson_counts,
+            bias_counts=bias_counts,
+        )
+
+        html_parts.append("<h3>Análise</h3><br>")
+        html_parts.append(
+            '<p style="font-size:16px;margin:0 0 20px 0;font-family:Arial,sans-serif;">'
+            f"{html.escape(report)}"
+            "</p>"
+        )
+
+        return "".join(html_parts)
