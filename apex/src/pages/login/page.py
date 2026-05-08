@@ -10,12 +10,12 @@ def layout(**query_strings):
         if current_user.is_authenticated:
                 return dcc.Location(pathname="/", id="redirect-home-login")
         modal = dmc.Modal(
-            title="Falha ao realizar Login",
+            title="Login não realizado",
             id="modal-centered",
             centered=True,
             zIndex=10000,
             opened= False,
-            children=[dmc.Text("Verifique seu Email e sua Senha")],
+            children=[dmc.Text("Verifique usuário e senha.")],
         )
         form = html.Div(
                 className="apex-login-card",
@@ -43,6 +43,7 @@ def layout(**query_strings):
                                 icon=DashIconify(icon="radix-icons:person"),
                                 id='username-input',
                                 size="md",
+                                autoComplete="username",
                                 ),
                                 dmc.PasswordInput(
                                 label="Senha",
@@ -50,6 +51,7 @@ def layout(**query_strings):
                                 icon=DashIconify(icon="bi:shield-lock"),
                                 id='password-input',
                                 size="md",
+                                autoComplete="current-password",
                                 ),
                                 dmc.Button(
                                 "Entrar",  id='login-button', fullWidth=True, className="mt-2 apex-button", color="#504cab", size="md"

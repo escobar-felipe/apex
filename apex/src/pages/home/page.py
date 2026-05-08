@@ -4,6 +4,7 @@ from flask_login import current_user
 from src.pages.pages_components.navbar import navbar
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
+from src.utils.security import mask_secret
 
 
 register_page(__name__, path='/', title="Área de Pesquisa")
@@ -75,7 +76,7 @@ def layout(**query_strings):
             [
                 dmc.Title("Área de Pesquisa", order=1, className="apex-page-title"),
                 dmc.Text(
-                    f"Bem vindo, {current_user.username}. Busque artigos e conteúdos por palavra-chave, revise os resultados e gere um relatório com apoio da IA.",
+                    f"Bem-vindo, {current_user.username}. Busque artigos e conteúdos por palavra-chave, revise os resultados e gere um relatório com apoio da IA.",
                     className="apex-page-subtitle",
                 ),
             ],
@@ -108,7 +109,7 @@ def layout(**query_strings):
         report_tab =[
             dmc.LoadingOverlay(dbc.Col([
             html.Div([],id='alert-div'),
-            dmc.Alert("Selecione pelo menos um texto para gerar o relatório!", title="Mensagem!", color="red", hide=True, duration=5000, id="alert-multi-select",className="mt-3"),
+            dmc.Alert("Selecione pelo menos um texto para gerar o relatório.", title="Ação necessária", color="red", hide=True, duration=5000, id="alert-multi-select",className="mt-3"),
             dmc.Title(f"Relatório GPT", order=2, className="apex-page-title mt-4"),
             dmc.Timeline(
                 active=3,
@@ -127,11 +128,11 @@ def layout(**query_strings):
                         ],
                     ),
                     dmc.TimelineItem(
-                        title="Sua chaveAPI",
+                        title="Sua chave API",
                         children=[
                             dmc.Text(
                                 [
-                                    current_user.api_key,
+                                    mask_secret(current_user.api_key),
                                 ],
                                 className="text-break",
                                 color="dimmed",
@@ -140,7 +141,7 @@ def layout(**query_strings):
                         ],
                     ),
                     dmc.TimelineItem(
-                        title="Qtd. de texto encontrados:",
+                        title="Quantidade de textos encontrados:",
                         children=[
                             dmc.Text(
                                 color="dimmed",
@@ -165,6 +166,48 @@ def layout(**query_strings):
                 dbc.FormText(
                     "Selecione os textos para serem analisados", color="secondary"
                 )]),
+            dmc.Divider(label="Configuração do relatório", labelPosition="center", className="my-4"),
+            html.Div(
+                [
+                    dmc.Select(
+                        label="Tipo de relatório",
+                        id="report-type",
+                        value="monitoring",
+                        data=[
+                            {"label": "Monitoramento executivo", "value": "monitoring"},
+                            {"label": "Risco de reputação", "value": "reputation"},
+                            {"label": "Oportunidades de comunicação", "value": "opportunity"},
+                            {"label": "Clipping analítico", "value": "clipping"},
+                        ],
+                    ),
+                    dmc.Select(
+                        label="Tom",
+                        id="report-tone",
+                        value="executive",
+                        data=[
+                            {"label": "Executivo", "value": "executive"},
+                            {"label": "Consultivo", "value": "consultative"},
+                            {"label": "Direto", "value": "direct"},
+                        ],
+                    ),
+                    dmc.TextInput(
+                        label="Público-alvo",
+                        id="report-audience",
+                        placeholder="Ex.: diretoria, cliente final, time de comunicação",
+                        value="diretoria e cliente",
+                    ),
+                    dmc.Textarea(
+                        label="Objetivo da análise",
+                        id="report-objective",
+                        placeholder="Ex.: avaliar riscos, oportunidades e próximos passos",
+                        autosize=True,
+                        minRows=2,
+                        value="identificar principais achados, riscos, oportunidades e recomendações práticas",
+                        className="apex-field-full",
+                    ),
+                ],
+                className="apex-form-grid",
+            ),
             dmc.Button("Gerar relatório", leftIcon=DashIconify(icon="mdi:report-box", width=22),className="p-2 my-4 apex-button" , size="md",fullWidth=True,color="#504cab",id="button-report")],class_name="col-md-12 apex-soft-panel"))
         ]
    
@@ -173,8 +216,8 @@ def layout(**query_strings):
                 [
                     dmc.TabsList(
                         [
-                            dmc.Tab(dmc.Text("Google", size="md"), icon=DashIconify(icon="dashicons:google", width=22),value="google", id="google_tittle",),
-                            dmc.Tab(dmc.Text("Twitter", size="md"), icon=DashIconify(icon="dashicons:twitter",width=22),value="twitter", id="twitter_tittle"),
+                            dmc.Tab(dmc.Text("Google News", size="md"), icon=DashIconify(icon="dashicons:google", width=22),value="google", id="google_tittle",),
+                            dmc.Tab(dmc.Text("X/Twitter", size="md"), icon=DashIconify(icon="dashicons:twitter",width=22),value="twitter", id="twitter_tittle"),
                             dmc.Tab(dmc.Text("Facebook", size="md"), icon=DashIconify(icon="dashicons:facebook",width=22), value="facebook", id="facebook_tittle"),
                             dmc.Tab(dmc.Text("Relatório GPT", size="md"), icon=DashIconify(icon="carbon:report",width=22), value="chatgpt", id="chatgpt_tittle",disabled=True),
                         ]

@@ -4,3 +4,4 @@ import src.callbacks.search_callback
 import src.callbacks.profile_callback
 import src.callbacks.report_callback
 import src.callbacks.results_search_callback
+import src.callbacks.admin_callback

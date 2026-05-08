@@ -1,110 +1,100 @@
+import logging
+import re
 import smtplib
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import formataddr, parseaddr
+
+from src.config import get_settings
+from src.utils.report_html import sanitize_report_html
+
+
+logger = logging.getLogger(__name__)
+EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+class EmailSendError(RuntimeError):
+    pass
+
+
+def is_valid_email(value):
+    if not value:
+        return False
+    _, address = parseaddr(value.strip())
+    return bool(address and EMAIL_PATTERN.match(address))
+
+
+def build_apex_email_html(report_html, intro_message=None):
+    safe_report = sanitize_report_html(report_html)
+    safe_intro = sanitize_report_html((intro_message or "").replace("\n", "<br>"))
+    intro_block = f'<div class="intro">{safe_intro}</div>' if safe_intro else ""
+    return f"""
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>
+            body {{ margin:0; padding:0; background:#f4f5f8; color:#202331; font-family:Arial, sans-serif; }}
+            .wrap {{ width:100%; padding:24px 0; background:#f4f5f8; }}
+            .panel {{ max-width:900px; margin:0 auto; background:#ffffff; border:1px solid #dfe2eb; }}
+            .header {{ padding:28px 32px; background:#504cab; color:#ffffff; }}
+            .brand {{ margin:0; font-size:24px; line-height:30px; font-weight:700; }}
+            .subtitle {{ margin:6px 0 0; font-size:14px; line-height:20px; color:#eef0ff; }}
+            .content {{ padding:28px 32px; }}
+            .intro {{ border-left:4px solid #12a594; margin-bottom:24px; padding:12px 16px; background:#f0fbf9; }}
+            .footer {{ padding:20px 32px; background:#202331; color:#ffffff; font-size:13px; line-height:18px; }}
+            a {{ color:#504cab; }}
+        </style>
+    </head>
+    <body>
+        <div class="wrap">
+            <div class="panel">
+                <div class="header">
+                    <h1 class="brand">APEX</h1>
+                    <p class="subtitle">Relatório de Monitoramento de Mídia</p>
+                </div>
+                <div class="content">{intro_block}{safe_report}</div>
+                <div class="footer">
+                    Apex Conteudo Estrategico<br>
+                    <a href="https://apexconteudo.com.br/" style="color:#ffffff;">apexconteudo.com.br</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
 
 
 class SendEmail:
-    def __init__(self,smtp_login, smtp_password):
-        # Configurações do servidor SMTP do Gmail
-        self.smtp_server= 'smtp.gmail.com'
-        self.smtp_port= 587  # Porta padrão para TLS
-        self.smtp_login= smtp_login # Seu endereço de e-mail do Gmail
-        self.smtp_password = smtp_password#'azqvruvuetpsityw'  # Sua senha do Gmail 
+    def __init__(self, smtp_login, smtp_password):
+        settings = get_settings()
+        self.smtp_server = "smtp.gmail.com"
+        self.smtp_port = 587
+        self.smtp_login = smtp_login
+        self.smtp_password = smtp_password
+        self.timeout = settings.smtp_timeout_seconds
 
-    def send_email_to(self, response, email):
-    # Conecte-se ao servidor SMTP e envie a mensagem
-        with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-            server.starttls()
-            server.login(self.smtp_login, self.smtp_password)
-            
-            
-            msg = MIMEMultipart()
-            msg['Subject'] = '[APEX REPORT] Resultado do relatório.'
-            msg['From'] = self.smtp_login
-            msg['To'] = email
+    def send_email_to(self, response, email, subject=None, intro_message=None):
+        if not is_valid_email(email):
+            raise EmailSendError("Email de destino inválido.")
+        if not self.smtp_login or not self.smtp_password:
+            raise EmailSendError("Email ou senha SMTP não cadastrados.")
 
-            html = f"""
-            <!DOCTYPE html>
-            <html lang="pt-br"  xmlns:o="urn:schemas-microsoft-com:office:office">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width,initial-scale=1">
-                <meta name="x-apple-disable-message-reformatting">
-                <title></title>
-                <!--[if mso]>
-                <noscript>
-                <xml>
-                    <o:OfficeDocumentSettings>
-                    <o:PixelsPerInch>96</o:PixelsPerInch>
-                    </o:OfficeDocumentSettings>
-                </xml>
-                </noscript>
-                <![endif]-->
-                <style>
-                table, td, div, h1, p {{font-family: Arial, sans-serif;}}
-                </style>
-            </head>
-            <body style="margin:0;padding:0;">
-                <table role="presentation" style="width:100%;border-collapse:collapse;border:0;border-spacing:0;background:#ffffff;">
-                <tr>
-                    <td align="center" style="padding:0;">
-                    <table role="presentation" style="width:900px;border-collapse:collapse;border:1px solid #cccccc;border-spacing:0;text-align:left;">
-                        <tr>
-                        <td style="padding:18px 30px 42px 30px;">
-                            <table role="presentation" style="width:100%;border-collapse:collapse;border:0;border-spacing:0;">
-                            <tr>
-                                <td align="center" style="padding:40px 0 0 0;background:#ffffff;">
-                                <img src="https://i.ibb.co/DCXMwvw/thambnail.jpg" alt="" width="100%" style="height:auto;display:block;" />
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding:0 0 0 0;color:#153643;">
-                                <h1>
-                                Relatório de Monitoramento de Mídia APEX
-                                </h1>
-                                <br>
-                                {response}                    
-                                </td>
-                            </tr>
-                            </table>
-                        </td>
-                        </tr>
-                        <tr>
-                        <td style="padding:30px;background:#504cab;">
-                            <table role="presentation" style="width:100%;border-collapse:collapse;border:0;border-spacing:0;font-size:9px;font-family:Arial,sans-serif;">
-                            <tr>
-                                <td style="padding:0;width:50%;" align="left">
-                                <p style="margin:0;font-size:14px;line-height:16px;font-family:Arial,sans-serif;color:#ffffff;">
-                                    &reg; 2023 por APEX, todos os direitos reservados<br/><a href="https://apexconteudo.com.br/" style="color:#ffffff;text-decoration:underline;">apexconteudo.com.br</a>
-                                </p>
-                                </td>
-                                <td style="padding:0;width:50%;" align="right">
-                                <table role="presentation" style="border-collapse:collapse;border:0;border-spacing:0;">
-                                    <tr>
-                                    <td style="padding:0 0 0 10px;width:38px;">
-                                        <a href="https://www.linkedin.com/company/apex-conte%C3%BAdo-estrat%C3%A9gico/" style="color:#504cab;"><img src="https://i.ibb.co/FYgRQLF/linkedin-icon.png" alt="Linkedin" width="38" style="height:auto;display:block;border:0;" /></a>
-                                    </td>
-                                    <td style="padding:0 0 0 10px;width:38px;">
-                                        <a href="https://www.instagram.com/apexagencia/" style="color:#504cab;"><img src="https://i.ibb.co/PWQbddz/instagram-icon.png" alt="Instagram" width="38" style="height:auto;display:block;border:0;" /></a>
-                                    </td>
-                                    </tr>
-                                </table>
-                                </td>
-                            </tr>
-                            </table>
-                        </td>
-                        </tr>
-                    </table>
-                    </td>
-                </tr>
-                </table>
-            </body>
-            </html>
-            """
-            try:
-                part = MIMEText(html, 'html')
-                msg.attach(part)
-                server.sendmail(self.smtp_login, email, msg.as_string())
-                return True
-            except:
-                return False
+        msg = MIMEMultipart()
+        msg["Subject"] = subject or "[APEX] Relatório de monitoramento"
+        msg["From"] = formataddr(("Apex", self.smtp_login))
+        msg["To"] = email.strip()
+        msg.attach(MIMEText(build_apex_email_html(response, intro_message=intro_message), "html"))
+
+        try:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=self.timeout) as server:
+                server.starttls()
+                server.login(self.smtp_login, self.smtp_password)
+                server.sendmail(self.smtp_login, [email.strip()], msg.as_string())
+        except (smtplib.SMTPException, OSError) as exc:
+            logger.exception("Falha ao enviar email Apex para %s", email)
+            raise EmailSendError("Não foi possível enviar o email. Verifique as credenciais SMTP e tente novamente.") from exc
+
+        logger.info("Email Apex enviado para %s", email)
+        return True

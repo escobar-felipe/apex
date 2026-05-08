@@ -17,5 +17,6 @@ RUN . /opt/venv/bin/activate && pip install --no-cache-dir -r requirements.txt
 RUN python3 -m nltk.downloader punkt -d /usr/share/nltk_data
 
 COPY ./src /app/src/
+COPY ./migrations /app/migrations/
 COPY wsgi.py /app/
 COPY ./assets /app/assets

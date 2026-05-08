@@ -6,8 +6,10 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import pandas as pd
-from newspaper import Article
+from newspaper import Article, Config
 from openai import OpenAI
+from openai import APIConnectionError, APITimeoutError, RateLimitError
+from src.config import get_settings
 
 
 logger = logging.getLogger(__name__)
@@ -22,6 +24,27 @@ class MonitoringConfig:
     max_output_tokens: int = 18000
     request_delay_seconds: float = 2.0
     temperature: float = 0.5
+    article_download_timeout_seconds: int = 30
+    openai_timeout_seconds: int = 60
+
+
+class ReportGenerationError(RuntimeError):
+    pass
+
+
+def friendly_report_error(exc: Exception) -> str:
+    message = str(exc)
+
+    if isinstance(exc, ReportGenerationError):
+        return message
+    if isinstance(exc, (APITimeoutError, APIConnectionError)):
+        return "A OpenAI demorou para responder ou ficou indisponível temporariamente. Tente gerar o relatório novamente."
+    if isinstance(exc, RateLimitError) or "rate limit" in message.lower() or "quota" in message.lower():
+        return "A chave OpenAI atingiu limite ou cota. Verifique seu plano e tente novamente."
+    if "timed out" in message.lower() or "timeout" in message.lower():
+        return "Uma integracao externa demorou para responder. Tente novamente em instantes."
+
+    return "Não foi possível gerar o relatório agora. Tente novamente ou revise as credenciais configuradas."
 
 
 class MonitoringAndAnalysis:
@@ -52,13 +75,18 @@ class MonitoringAndAnalysis:
         tokenizer: Any,
         articles: list[dict[str, Any]],
         openai_api_key: str,
+        report_options: Optional[dict[str, Any]] = None,
         config: Optional[MonitoringConfig] = None,
     ) -> None:
         self.tokenizer = tokenizer
         self.articles = articles
+        self.report_options = report_options or {}
         self.config = config or MonitoringConfig()
+        settings = get_settings()
+        self.config.article_download_timeout_seconds = settings.external_request_timeout_seconds
+        self.config.openai_timeout_seconds = settings.openai_timeout_seconds
 
-        self.client = OpenAI(api_key=openai_api_key)
+        self.client = OpenAI(api_key=openai_api_key, timeout=self.config.openai_timeout_seconds)
 
         self.df = pd.DataFrame()
         self.error: Optional[str] = None
@@ -86,7 +114,9 @@ class MonitoringAndAnalysis:
         Baixa e extrai o conteúdo textual de uma URL.
         Retorna título + texto.
         """
-        article = Article(url)
+        article_config = Config()
+        article_config.request_timeout = self.config.article_download_timeout_seconds
+        article = Article(url, config=article_config)
 
         try:
             article.download()
@@ -126,7 +156,7 @@ class MonitoringAndAnalysis:
         Cria o prompt de análise e pede JSON para facilitar o parsing.
         """
         return f"""
-Analise este artigo de notícias e responda apenas em JSON válido.
+Analise este artigo de notícias como analista de comunicação estratégica e responda apenas em JSON válido.
 
 Use exatamente estas chaves:
 - "Temas principais"
@@ -136,11 +166,16 @@ Use exatamente estas chaves:
 - "Porta-vozes"
 - "Viés"
 - "Emoção do artigo"
+- "Risco"
+- "Oportunidade"
+- "Relevância"
 
 Regras:
 - Seja claro e conciso.
 - Não adicione texto fora do JSON.
 - Caso alguma informação não exista, retorne uma string vazia.
+- Separe fatos observáveis de inferências.
+- A chave "Relevância" deve ser uma nota de 1 a 5 explicada em uma frase.
 
 Artigo:
 {article_text}
@@ -154,6 +189,7 @@ Artigo:
         if not content:
             return {}
 
+        content = self.strip_json_fence(content)
         try:
             parsed = json.loads(content)
             if isinstance(parsed, dict):
@@ -162,6 +198,17 @@ Artigo:
             logger.warning("Model response is not valid JSON. Trying fallback parser.")
 
         return self.fallback_parse_response(content)
+
+    def strip_json_fence(self, content: str) -> str:
+        content = (content or "").strip()
+        if content.startswith("```"):
+            lines = content.splitlines()
+            if lines and lines[0].strip().startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            content = "\n".join(lines).strip()
+        return content
 
     def fallback_parse_response(self, content: str) -> dict[str, str]:
         """
@@ -236,6 +283,9 @@ Artigo:
                 df.loc[index, "spokespersons"] = parsed_data.get("Porta-vozes", "")
                 df.loc[index, "biases"] = parsed_data.get("Viés", "")
                 df.loc[index, "emotion"] = parsed_data.get("Emoção do artigo", "")
+                df.loc[index, "risk"] = parsed_data.get("Risco", "")
+                df.loc[index, "opportunity"] = parsed_data.get("Oportunidade", "")
+                df.loc[index, "relevance"] = parsed_data.get("Relevância", "")
 
             except Exception as exc:
                 logger.exception("Failed to analyze article at index %s", index)
@@ -262,9 +312,20 @@ Artigo:
         most_common: dict[str, int],
         spokesperson_counts: dict[str, int],
         bias_counts: dict[str, int],
+        article_rows: list[dict[str, str]],
     ) -> str:
+        audience = self.report_options.get("audience") or "cliente executivo"
+        objective = self.report_options.get("objective") or "entender o cenário de mídia e orientar próximos passos"
+        tone = self.report_options.get("tone") or "executivo"
+        report_type = self.report_options.get("report_type") or "monitoramento"
         return f"""
-Gere um relatório de monitoramento de mídia com base nos dados abaixo.
+Gere um relatório de monitoramento de mídia em JSON válido para ser renderizado por uma aplicação.
+
+Contexto:
+- Tipo de relatório: {report_type}
+- Público-alvo: {audience}
+- Objetivo: {objective}
+- Tom: {tone}
 
 Informações mais comuns:
 {most_common}
@@ -275,7 +336,24 @@ Porta-vozes mais frequentemente mencionados:
 Artigos ou fontes mais tendenciosos:
 {bias_counts}
 
-Escreva um relatório bem estruturado e conciso resumindo as principais descobertas.
+Artigos analisados:
+{json.dumps(article_rows, ensure_ascii=False)}
+
+Responda apenas um JSON com estas chaves:
+- "executive_summary": lista com 3 a 5 frases objetivas.
+- "context": string curta explicando a busca.
+- "key_findings": lista de objetos com "title", "evidence" e "impact".
+- "sentiment": string com leitura geral do sentimento.
+- "risks": lista de objetos com "risk", "evidence" e "mitigation".
+- "opportunities": lista de objetos com "opportunity", "evidence" e "action".
+- "recommendations": lista de objetos com "action", "reason" e "priority".
+- "methodology": string curta explicando que a análise se limita às fontes selecionadas.
+
+Regras:
+- Cite somente fatos presentes nos artigos analisados.
+- Separe fatos de inferências.
+- Se houver poucos dados, sinalize baixa confiança.
+- Não invente porta-vozes, datas ou fatos.
 """.strip()
 
     def generate_report(
@@ -283,6 +361,7 @@ Escreva um relatório bem estruturado e conciso resumindo as principais descober
         most_common: dict[str, int],
         spokesperson_counts: dict[str, int],
         bias_counts: dict[str, int],
+        article_rows: list[dict[str, str]],
     ) -> str:
         """
         Gera o relatório consolidado com base nas análises dos artigos.
@@ -291,6 +370,7 @@ Escreva um relatório bem estruturado e conciso resumindo as principais descober
             most_common=most_common,
             spokesperson_counts=spokesperson_counts,
             bias_counts=bias_counts,
+            article_rows=article_rows,
         )
 
         response = self.client.chat.completions.create(
@@ -311,6 +391,155 @@ Escreva um relatório bem estruturado e conciso resumindo as principais descober
 
         return (response.choices[0].message.content or "").strip()
 
+    def parse_report_response(self, content: str) -> dict[str, Any]:
+        content = self.strip_json_fence(content)
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            logger.warning("Report response is not valid JSON. Using fallback report.")
+
+        return {
+            "executive_summary": [content.strip() or "Não foi possível estruturar o resumo executivo."],
+            "context": "",
+            "key_findings": [],
+            "sentiment": "",
+            "risks": [],
+            "opportunities": [],
+            "recommendations": [],
+            "methodology": "Análise limitada às fontes selecionadas pelo usuário.",
+        }
+
+    def render_dict_item(self, item: dict[str, Any], section_key: str) -> str:
+        section_fields = {
+            "key_findings": (
+                ("title", "tema"),
+                "Achado relevante",
+                ("evidence", "evidencia"),
+                ("impact", "impacto"),
+            ),
+            "risks": (
+                ("risk", "risco", "title", "tema"),
+                "Risco identificado",
+                ("evidence", "evidencia"),
+                ("mitigation", "mitigacao", "mitigação", "impact", "impacto"),
+            ),
+            "opportunities": (
+                ("opportunity", "oportunidade", "title", "tema"),
+                "Oportunidade identificada",
+                ("evidence", "evidencia"),
+                ("action", "acao", "ação", "impact", "impacto"),
+            ),
+            "recommendations": (
+                ("action", "acao", "ação", "recommendation", "recomendacao", "recomendação", "title"),
+                "Recomendação prática",
+                ("reason", "justificativa", "rationale", "evidence", "evidencia"),
+                ("priority", "prioridade", "impact", "impacto"),
+            ),
+        }
+        title_keys, fallback_title, detail_keys, note_keys = section_fields.get(
+            section_key,
+            (("title", "tema"), "", ("description", "descricao", "descrição"), ("impact", "impacto")),
+        )
+
+        def first_value(keys):
+            for key in keys:
+                value = item.get(key)
+                if value:
+                    return str(value)
+            return ""
+
+        title = first_value(title_keys)
+        detail = first_value(detail_keys)
+        note = first_value(note_keys)
+
+        if not title and not detail and not note:
+            values = [str(value) for value in item.values() if value]
+            detail = " ".join(values)
+
+        title_html = f"<strong>{html.escape(title or fallback_title)}</strong><br>" if title or fallback_title else ""
+        detail_html = f"{html.escape(detail)}<br>" if detail else ""
+        note_html = f"<em>{html.escape(note)}</em>" if note else ""
+        return f"<li>{title_html}{detail_html}{note_html}</li>"
+
+    def render_list(self, items: Any, section_key: str = "") -> str:
+        if not items:
+            return "<p>Sem apontamentos suficientes nas fontes selecionadas.</p>"
+        if not isinstance(items, list):
+            items = [items]
+
+        rendered = []
+        for item in items:
+            if isinstance(item, dict):
+                rendered.append(self.render_dict_item(item, section_key))
+            else:
+                rendered.append(f"<li>{html.escape(str(item))}</li>")
+        return "<ul>" + "".join(rendered) + "</ul>"
+
+    def render_report_html(self, report_data: dict[str, Any], article_rows: list[dict[str, str]]) -> str:
+        title = html.escape(str(self.report_options.get("title") or "Relatório de Monitoramento"))
+        objective = html.escape(str(self.report_options.get("objective") or ""))
+        audience = html.escape(str(self.report_options.get("audience") or ""))
+
+        sources = "".join(
+            (
+                "<li>"
+                f"<strong>{html.escape(row.get('title', ''))}</strong>"
+                f" - {html.escape(row.get('source', ''))}"
+                f"<br><a href=\"{html.escape(row.get('link', ''))}\" target=\"_blank\" rel=\"noreferrer\">Abrir fonte</a>"
+                "</li>"
+            )
+            for row in article_rows
+        )
+
+        return f"""
+<article class="apex-generated-report">
+  <header>
+    <p class="eyebrow">APEX | Monitoramento de mídia</p>
+    <h1>{title}</h1>
+    <p><strong>Público-alvo:</strong> {audience or "Não informado"}</p>
+    <p><strong>Objetivo:</strong> {objective or "Não informado"}</p>
+  </header>
+  <section>
+    <h2>Resumo executivo</h2>
+    {self.render_list(report_data.get("executive_summary"), "executive_summary")}
+  </section>
+  <section>
+    <h2>Contexto</h2>
+    <p>{html.escape(str(report_data.get("context") or "Análise baseada nos conteúdos selecionados pelo usuário."))}</p>
+  </section>
+  <section>
+    <h2>Principais achados</h2>
+    {self.render_list(report_data.get("key_findings"), "key_findings")}
+  </section>
+  <section>
+    <h2>Sentimento e leitura estratégica</h2>
+    <p>{html.escape(str(report_data.get("sentiment") or "Sem dados suficientes para uma leitura consolidada."))}</p>
+  </section>
+  <section>
+    <h2>Riscos</h2>
+    {self.render_list(report_data.get("risks"), "risks")}
+  </section>
+  <section>
+    <h2>Oportunidades</h2>
+    {self.render_list(report_data.get("opportunities"), "opportunities")}
+  </section>
+  <section>
+    <h2>Recomendações</h2>
+    {self.render_list(report_data.get("recommendations"), "recommendations")}
+  </section>
+  <section>
+    <h2>Fontes analisadas</h2>
+    <ul>{sources}</ul>
+  </section>
+  <footer>
+    <h2>Observações metodológicas</h2>
+    <p>{html.escape(str(report_data.get("methodology") or "A análise se limita às fontes selecionadas e ao conteúdo disponível no momento da geração."))}</p>
+  </footer>
+</article>
+""".strip()
+
     def analyze_dataframe(self) -> str:
         """
         Gera o HTML final com:
@@ -319,7 +548,7 @@ Escreva um relatório bem estruturado e conciso resumindo as principais descober
         - Relatório consolidado
         """
         if self.df.empty:
-            raise Exception(
+            raise ReportGenerationError(
                 "Resultado incompleto, falha na integração com GPT. "
                 "Entre em contato com o suporte para ajustar."
             )
@@ -328,9 +557,9 @@ Escreva um relatório bem estruturado e conciso resumindo as principais descober
 
         if "main_themes" not in df.columns:
             if self.error:
-                raise Exception(self.error)
+                raise ReportGenerationError(self.error)
 
-            raise Exception("Nenhuma análise foi gerada para os artigos.")
+            raise ReportGenerationError("Nenhuma análise foi gerada para os artigos.")
 
         most_common = df["main_themes"].value_counts().head(5).to_dict()
         spokesperson_counts = df["spokespersons"].value_counts().head(5).to_dict()
@@ -361,17 +590,36 @@ Escreva um relatório bem estruturado e conciso resumindo as principais descober
             )
             html_parts.append("<br>")
 
+        article_rows = []
+        for _, row in df.iterrows():
+            article_rows.append(
+                {
+                    "title": str(row.get("title", "")),
+                    "source": str(row.get("source", "")),
+                    "link": str(row.get("link", "")),
+                    "summary": str(row.get("resume", "")),
+                    "themes": str(row.get("main_themes", "")),
+                    "risk": str(row.get("risk", "")),
+                    "opportunity": str(row.get("opportunity", "")),
+                    "relevance": str(row.get("relevance", "")),
+                }
+            )
+
         report = self.generate_report(
             most_common=most_common,
             spokesperson_counts=spokesperson_counts,
             bias_counts=bias_counts,
+            article_rows=article_rows,
         )
+        report_data = self.parse_report_response(report)
 
-        html_parts.append("<h3>Análise</h3><br>")
-        html_parts.append(
-            '<p style="font-size:16px;margin:0 0 20px 0;font-family:Arial,sans-serif;">'
-            f"{html.escape(report)}"
-            "</p>"
-        )
+        report_html = self.render_report_html(report_data, article_rows)
 
-        return "".join(html_parts)
+        return {
+            "version": 2,
+            "data": report_data,
+            "html": report_html,
+            "legacy_html": "".join(html_parts),
+            "articles": article_rows,
+            "options": self.report_options,
+        }

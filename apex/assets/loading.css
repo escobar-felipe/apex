@@ -196,6 +196,51 @@ nav {
     background: #fff;
 }
 
+.apex-report-review {
+    background: #ffffff;
+    border: 1px solid var(--apex-border);
+    border-radius: 8px;
+    padding: 24px;
+}
+
+.apex-report-review-section {
+    border-bottom: 1px solid var(--apex-border);
+    padding: 18px 0;
+}
+
+.apex-report-review-section:first-child {
+    padding-top: 0;
+}
+
+.apex-report-review-section:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.apex-report-section-title {
+    color: var(--apex-brand-dark);
+    margin-bottom: 10px;
+}
+
+.apex-generated-report {
+    color: #202331;
+    font-family: Arial, sans-serif;
+    line-height: 1.5;
+}
+
+.apex-generated-report .eyebrow {
+    color: #504cab;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.apex-generated-report h1,
+.apex-generated-report h2 {
+    color: #202331;
+}
+
 .apex-login-page {
     background:
         linear-gradient(120deg, rgba(80, 76, 171, 0.9), rgba(18, 165, 148, 0.58)),
@@ -217,6 +262,39 @@ nav {
 .apex-login-logo {
     max-width: 190px;
     height: auto;
+}
+
+.apex-section-title {
+    color: var(--apex-text);
+    font-weight: 700;
+    letter-spacing: 0;
+    margin-bottom: 16px;
+}
+
+.apex-admin-grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.apex-admin-table {
+    margin-bottom: 0;
+}
+
+.apex-admin-table th {
+    color: var(--apex-muted);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+}
+
+.apex-dropdown .Select-control {
+    border-color: var(--apex-border);
+}
+
+@media (max-width: 900px) {
+    .apex-admin-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .apex-navbar-top {
@@ -415,6 +493,34 @@ nav {
     color: var(--apex-brand-dark) !important;
 }
 
+.apex-button-danger {
+    background-color: #b42318 !important;
+    border-color: #b42318 !important;
+    color: #ffffff !important;
+}
+
+.apex-button-danger:hover,
+.apex-button-danger:focus,
+.apex-button-danger:active {
+    background-color: #912018 !important;
+    border-color: #912018 !important;
+    color: #ffffff !important;
+}
+
+.apex-button-danger-outline {
+    background-color: #ffffff !important;
+    border-color: #b42318 !important;
+    color: #b42318 !important;
+}
+
+.apex-button-danger-outline:hover,
+.apex-button-danger-outline:focus,
+.apex-button-danger-outline:active {
+    background-color: #fff1f0 !important;
+    border-color: #912018 !important;
+    color: #912018 !important;
+}
+
 .btn-primary {
     background-color: var(--apex-brand) !important;
     border-color: var(--apex-brand) !important;
@@ -488,6 +594,88 @@ a.descripton:hover{
     text-decoration: none;
     background-color: #fafafa;
   }
+
+.apex-official-links {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.apex-official-link {
+    align-items: flex-start;
+    background: #ffffff;
+    border: 1px solid var(--apex-border);
+    border-radius: 8px;
+    color: var(--apex-brand-dark) !important;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 42px minmax(0, 1fr) 18px;
+    min-height: 86px;
+    padding: 14px;
+    text-decoration: none !important;
+    transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.apex-official-link:hover,
+.apex-official-link:focus {
+    background: #f1f0ff;
+    border-color: #c8c6ff;
+    box-shadow: 0 10px 24px rgba(16, 24, 40, 0.08);
+    color: var(--apex-brand-dark) !important;
+}
+
+.apex-official-link-icon {
+    align-items: center;
+    background: #ecebff;
+    border-radius: 8px;
+    color: var(--apex-brand);
+    display: flex;
+    height: 42px;
+    justify-content: center;
+    width: 42px;
+}
+
+.apex-official-link-copy {
+    min-width: 0;
+}
+
+.apex-official-link-heading {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.apex-official-link-title {
+    color: var(--apex-text);
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.apex-official-link-tag {
+    background: #e8f7f5;
+    border: 1px solid #b9e4de;
+    border-radius: 999px;
+    color: #087b6f;
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
+    padding: 5px 8px;
+}
+
+.apex-official-link-description {
+    color: var(--apex-muted);
+    display: block;
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
+.apex-official-link-external {
+    color: var(--apex-muted);
+    margin-top: 2px;
+}
   
 
 /* // If you are using multiple offcanvas in your app, add this */
@@ -578,6 +766,11 @@ a.descripton:hover{
   }
 
 @media (max-width: 768px) {
+    .apex-container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
     .apex-panel,
     .apex-login-card {
         padding: 20px;
@@ -585,21 +778,68 @@ a.descripton:hover{
 
     .apex-form-grid {
         grid-template-columns: 1fr;
+        gap: 14px;
     }
 
-    .apex-instruction-grid {
+    .apex-instruction-grid,
+    .apex-official-links {
         grid-template-columns: 1fr;
     }
 
+    .apex-nav-wrap {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-left: 12px;
+        padding-right: 12px;
+        flex-wrap: nowrap;
+    }
+
     .apex-nav-link {
-        min-width: 100%;
+        min-width: auto;
+        flex: 0 0 auto;
     }
 
     .apex-navbar-container {
         gap: 14px;
     }
 
+    .apex-actions-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .apex-actions-row .mantine-TextInput-root,
+    .apex-actions-row .mantine-LoadingOverlay-root,
+    .apex-actions-row button {
+        width: 100% !important;
+    }
+
+    .apex-report-frame {
+        height: 460px !important;
+    }
+
+    .apex-page-title {
+        font-size: 1.65rem;
+        line-height: 2rem;
+    }
+
+    .apex-tabs {
+        padding: 10px;
+        overflow-x: auto;
+    }
+
     .apex-logout-link span {
         display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .apex-login-card {
+        width: min(94vw, 390px);
+        padding: 18px;
+    }
+
+    .apex-wordmark {
+        font-size: 1.65rem;
     }
 }

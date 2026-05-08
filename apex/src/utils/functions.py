@@ -1,13 +1,78 @@
 import dash_mantine_components as dmc
 import dash_bootstrap_components as dbc
 from dash import html
-from typing import List
 from dash_iconify import DashIconify
 import requests
-from bs4 import BeautifulSoup
+from requests import RequestException
 from flask_login import current_user
 import json
+from src.config import get_settings
 
+
+class SearchProviderError(RuntimeError):
+    pass
+
+
+def _serper_post(path, payload):
+    if not current_user.serpapi_key:
+        raise SearchProviderError("Cadastre uma chave SerperAPI para realizar pesquisas.")
+
+    url = f"https://google.serper.dev/{path}"
+    settings = get_settings()
+    headers = {
+        'X-API-KEY': current_user.serpapi_key,
+        'Content-Type': 'application/json'
+    }
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=settings.external_request_timeout_seconds)
+    except RequestException:
+        raise SearchProviderError("Não foi possível conectar a SerperAPI. Tente novamente em instantes.")
+
+    try:
+        data = response.json()
+    except ValueError:
+        raise SearchProviderError("A SerperAPI retornou uma resposta invalida.")
+
+    if response.status_code in {401, 403}:
+        raise SearchProviderError("Chave SerperAPI inválida ou não autorizada.")
+    if response.status_code == 429:
+        raise SearchProviderError("Limite da SerperAPI atingido. Tente novamente mais tarde.")
+    if response.status_code >= 400:
+        message = data.get("message") or "Erro ao consultar a SerperAPI."
+        raise SearchProviderError(message)
+
+    return data
+
+
+def validate_serper_api():
+    _serper_post(
+        "search",
+        {
+            "q": "apex",
+            "gl": "br",
+            "hl": "pt-br",
+            "num": 1,
+        },
+    )
+
+
+def normalize_search_result(result):
+    title = result.get("title") or "Título não informado"
+    link = result.get("link") or "#"
+    snippet = result.get("snippet") or result.get("description") or "Descrição não informada"
+    source = result.get("source") or result.get("domain") or "Fonte não identificada"
+    date = result.get("date") or "Data não informada"
+
+    return {
+        "title": str(title),
+        "link": str(link),
+        "description": f"{date} - {snippet}",
+        "source": str(source),
+    }
+
+
+def _limited_results(results, limit):
+    return results[:limit]
 
 
 def shorten_string(s):
@@ -50,73 +115,46 @@ def create_cards(cards_list:Card):
     
     return card_append
 
-def google_search(query:str, num_result=15,as_sitesearch='google'):
-    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36'}
-    search_results = []
-    query = query.replace(" ","+")
+def google_search(query: str, num_result=None, as_sitesearch='google'):
+    settings = get_settings()
+    result_limit = num_result or settings.search_results_per_source
     search_results = []
     if current_user.serpapi_key:
         if as_sitesearch == 'google':
-            url = "https://google.serper.dev/news"
-            payload = json.dumps({
+            payload = {
             "q": query,
             "gl": "br",
-            "hl": "pt-br"
-            })
-            headers = {
-            'X-API-KEY': current_user.serpapi_key,
-            'Content-Type': 'application/json'
+            "hl": "pt-br",
+            "num": result_limit,
             }
-            #define os parâmetros de pesquisa na SERPAPI 
-            # response = requests.get('https://serpapi.com/search.json', params=params)
-            response = requests.request("POST", url, headers=headers, data=payload)
-            #utilizando a lib requests para solicitar a requisição e receber a resposta(response)
-            data = json.loads(response.text)
-            #cria um json com a resposta
+            data = _serper_post("news", payload)
 
             if 'news' in data:
-                #verifica se o json contém a chave 'new_results'
-                #cria uma lista vazia
-                for result in data['news']:
-                    #para cada resultado(lista) nos valores da chave 'new_results' 
-                    search_results.append({
-                        'title': result['title'],
-                        'link': result['link'],
-                        'description':f"{result.get('date', 'Data não informada')} - {result['snippet']}",
-                        'source': result['source']
-                    })
-        #             #adiciona um dicionário na lista articles com os seguintes valores: title, link, date e source
-        #     else:
-        #         return []
+                for result in _limited_results(data['news'], result_limit):
+                    search_results.append(normalize_search_result(result))
             return search_results
         elif as_sitesearch == 'twitter':
-            url = "https://google.serper.dev/search"
-            payload = json.dumps({
-            "q": query + "twitter",
+            payload = {
+            "q": query + " (site:twitter.com OR site:x.com)",
             "gl": "br",
-            "hl": "pt-br"
-            })
-            headers = {
-            'X-API-KEY': current_user.serpapi_key,
-            'Content-Type': 'application/json'
+            "hl": "pt-br",
+            "num": result_limit,
             }
-            #define os parâmetros de pesquisa na SERPAPI 
-            # response = requests.get('https://serpapi.com/search.json', params=params)
-            response = requests.request("POST", url, headers=headers, data=payload)
-            #utilizando a lib requests para solicitar a requisição e receber a resposta(response)
-            data = json.loads(response.text)
+            data = _serper_post("search", payload)
             if 'organic' in data:
-                #verifica se o json contém a chave 'new_results'
-                #cria uma lista vazia
-                for result in data['organic']:
-                    #para cada resultado(lista) nos valores da chave 'new_results' 
-                    search_results.append({
-                        'title': result['title'],
-                        'link': result['link'],
-                        'description':f"{result.get('date', 'Data não informada')} - {result['snippet']}",
-                        'source': result.get('source',"Fonte não identificada")
-                    })
-        #             #adiciona um dicionário na lista articles com os seguintes valores: title, link, date e source
-        #     else:
-        #         return []
+                for result in _limited_results(data['organic'], result_limit):
+                    search_results.append(normalize_search_result(result))
             return search_results
+        elif as_sitesearch == 'facebook':
+            payload = {
+            "q": query + " site:facebook.com",
+            "gl": "br",
+            "hl": "pt-br",
+            "num": result_limit,
+            }
+            data = _serper_post("search", payload)
+            if 'organic' in data:
+                for result in _limited_results(data['organic'], result_limit):
+                    search_results.append(normalize_search_result(result))
+            return search_results
+    return search_results

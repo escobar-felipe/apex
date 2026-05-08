@@ -21,7 +21,7 @@ def layout(**query_strings):
             ],
             className="mt-4 mb-4",
         )
-        alert = dmc.Alert(dmc.Group([dmc.Text(f"Para realizar o cadastro dos seus dados, siga as instruções:", size="md"), dcc.Link("Clique aqui!", className="fs-6 apex-link" ,href="/profile/instructions")]), title=dmc.Text(
+        alert = dmc.Alert(dmc.Group([dmc.Text("Para cadastrar seus dados, siga as instruções da conta.", size="md"), dcc.Link("Abrir instruções", className="fs-6 apex-link" ,href="/profile/instructions")]), title=dmc.Text(
             "Informações", weight=700), color="yellow", className="apex-alert mb-4")
         api_key_input = html.Div(
             [          
@@ -29,13 +29,13 @@ def layout(**query_strings):
                     [
                         dbc.Label("Email", html_for="email_user"),
                         dbc.Input(
-                            type="text",
+                            type="email",
                             id="email_user",
                             placeholder="Seu email",
                             value=current_user.email
                         ),
                         dbc.FormText(
-                            "Entre com email (Gmail).", color="secondary"
+                            "Use o Gmail configurado para envio dos relatórios.", color="secondary"
                         ),
                     ]
                 ),
@@ -43,13 +43,13 @@ def layout(**query_strings):
                     [
                         dbc.Label("Senha SMTP", html_for="stmp_password"),
                         dbc.Input(
-                            type="text",
+                            type="password",
                             id="stmp_password",
-                            placeholder="Sua senha SMTP",
-                            value=current_user.stmp_password
+                            placeholder="Senha SMTP cadastrada" if current_user.stmp_password else "Sua senha SMTP",
+                            value=""
                         ),
                         dbc.FormText(
-                            "Entre com sua senha SMTP.", color="secondary"
+                            "Use uma senha de aplicativo do Google, não a senha normal da conta.", color="secondary"
                         ),
                     ]
                 ),
@@ -57,13 +57,13 @@ def layout(**query_strings):
                     [
                         dbc.Label("Chave API", html_for="open-api-key"),
                         dbc.Input(
-                            type="text",
+                            type="password",
                             id="open-api-key",
-                            placeholder="Sua chave OpenAI",
-                            value=current_user.api_key
+                            placeholder="Chave OpenAI cadastrada" if current_user.api_key else "Sua chave OpenAI",
+                            value=""
                         ),
                         dbc.FormText(
-                            "Entre com sua chave da API OpenAI.", color="secondary"
+                            "Informe sua chave da API OpenAI.", color="secondary"
                         ),
                     ]
                 ),
@@ -71,18 +71,29 @@ def layout(**query_strings):
                     [
                         dbc.Label("Chave SerperAPI", html_for="serp-api-key"),
                         dbc.Input(
-                            type="text",
+                            type="password",
                             id="serp-api-key",
-                            placeholder="Sua chave SerperAPI",
-                            value=current_user.serpapi_key
+                            placeholder="Chave SerperAPI cadastrada" if current_user.serpapi_key else "Sua chave SerperAPI",
+                            value=""
                         ),
                         dbc.FormText(
-                            "Entre com sua chave SerperAPI.", color="secondary"
+                            "Informe sua chave SerperAPI.", color="secondary"
                         ),
                     ]
                 ),
             ],
             className="apex-form-grid",
+        )
+        confirmation = dbc.Checklist(
+            options=[
+                {
+                    "label": "Confirmo que desejo salvar ou sobrescrever as credenciais da minha conta.",
+                    "value": "confirmed",
+                }
+            ],
+            value=[],
+            id="confirm-update-user",
+            class_name="mt-3",
         )
         button = dmc.Center(
             style={"height": "auto", "width": "100%"},
@@ -97,15 +108,15 @@ def layout(**query_strings):
             ],
         )
         modal = dmc.Modal(
-            title="Falha ao realizar Login",
+            title="Atualização da conta",
             id="modal-update-user",
             centered=True,
             zIndex=10000,
             opened= False,
-            children=[dmc.Text("Verifique seu Email e sua Senha")],
+            children=[dmc.Text("Revise os dados informados.")],
         )
 
-        form=  dmc.LoadingOverlay(dbc.Form([api_key_input], class_name="mt-4", id="form-user"))
+        form=  dmc.LoadingOverlay(dbc.Form([api_key_input, confirmation], class_name="mt-4", id="form-user"))
         content = dbc.Container(
             [dbc.Col([page_header, alert, redirect_div, html.Div(form, className="apex-panel apex-profile-form"), button,modal])], fluid=False, class_name="apex-container")
         body = html.Div([navbar(icon=None, profile_active=True), content], className="apex-shell")
