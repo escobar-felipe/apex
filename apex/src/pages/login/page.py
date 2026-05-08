@@ -43,7 +43,6 @@ def layout(**query_strings):
                                 icon=DashIconify(icon="radix-icons:person"),
                                 id='username-input',
                                 size="md",
-                                autoComplete="username",
                                 ),
                                 dmc.PasswordInput(
                                 label="Senha",
@@ -51,7 +50,6 @@ def layout(**query_strings):
                                 icon=DashIconify(icon="bi:shield-lock"),
                                 id='password-input',
                                 size="md",
-                                autoComplete="current-password",
                                 ),
                                 dmc.Button(
                                 "Entrar",  id='login-button', fullWidth=True, className="mt-2 apex-button", color="#504cab", size="md"
